@@ -1,13 +1,12 @@
 package lila.ws
 package ipc
 
-import chess.Color
-import chess.format.UciCharPair
+import chess.format.{ FEN, Uci, UciCharPair }
 import chess.opening.FullOpening
-import chess.variant.Crazyhouse
-import lila.ws.Position
-import lila.ws.util.LilaJsObject.augment
+import chess.variant.Standard
 import play.api.libs.json._
+
+import lila.ws.util.LilaJsObject.augment
 
 sealed trait ClientIn extends ClientMsg {
   def write: String
@@ -38,27 +37,28 @@ object ClientIn {
     )
   }
 
-  case class Fen(gameId: Game.Id, position: Position) extends ClientIn {
+  case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN) extends ClientIn {
     def write =
       cliMsg(
         "fen",
-        Json
-          .obj(
-            "id"  -> gameId.value,
-            "lm"  -> position.lastUci,
-            "fen" -> position.fenWithColor
-          )
-          .add("wc" -> position.clock.map(_.white))
-          .add("bc" -> position.clock.map(_.black))
+        Json.obj(
+          "id"  -> gameId.value,
+          "lm"  -> lastUci,
+          "fen" -> fen
+        )
       )
-  }
-
-  case class Finish(gameId: Game.Id, winner: Option[Color]) extends ClientIn {
-    def write = cliMsg("finish", Json.obj("id" -> gameId.value, "win" -> winner.map(_.letter.toString)))
   }
 
   case class Mlat(millis: Double) extends ClientIn {
     lazy val write = cliMsg("mlat", millis)
+  }
+
+  case class NbMembers(value: Int) extends ClientIn {
+    lazy val write = cliMsg("member/nb", value)
+  }
+
+  case class NbRounds(value: Int) extends ClientIn {
+    lazy val write = cliMsg("round/nb", value)
   }
 
   sealed trait HasVersion extends ClientMsg {
@@ -82,7 +82,7 @@ object ClientIn {
   val emptyCrowd = Crowd(Json.obj())
 
   case class LobbyPairing(fullId: Game.FullId) extends ClientIn {
-    def write =
+    def write = {
       cliMsg(
         "redirect",
         Json.obj(
@@ -90,6 +90,7 @@ object ClientIn {
           "url" -> s"/$fullId"
         )
       )
+    }
   }
 
   case class LobbyNonIdle(payload: Payload) extends ClientIn {
@@ -145,7 +146,7 @@ object ClientIn {
       dests: Map[chess.Pos, List[chess.Pos]],
       opening: Option[chess.opening.FullOpening],
       drops: Option[List[chess.Pos]],
-      crazyData: Option[Crazyhouse.Data],
+      crazyData: Option[Standard.Data],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =
@@ -232,10 +233,11 @@ object ClientIn {
     case class Onlines(users: List[FriendList.UserView]) extends ClientIn {
       def write =
         Json stringify Json.obj(
-          "t"       -> "following_onlines",
-          "d"       -> users.map(_.data.titleName),
-          "playing" -> users.collect { case u if u.meta.playing => u.id },
-          "patrons" -> users.collect { case u if u.data.patron => u.id }
+          "t"        -> "following_onlines",
+          "d"        -> users.map(_.data.titleName),
+          "playing"  -> users.collect { case u if u.meta.playing => u.id },
+          "studying" -> Json.arr(),
+          "patrons"  -> users.collect { case u if u.data.patron => u.id }
         )
     }
     case class Enters(user: FriendList.UserView) extends ClientIn {

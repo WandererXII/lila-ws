@@ -1,12 +1,12 @@
 package lila.ws
 
 import play.api.libs.json._
+
 import chess.format.{ FEN, Uci, UciCharPair }
 import chess.opening.{ FullOpening, FullOpeningDB }
 import chess.Pos
-import chess.variant.{ Crazyhouse, Variant }
+import chess.variant.{ Standard, Variant }
 import com.typesafe.scalalogging.Logger
-import cats.syntax.option._
 
 import ipc._
 
@@ -14,14 +14,16 @@ object Chess {
 
   private val logger = Logger(getClass)
 
-  def apply(req: ClientOut.AnaMove): ClientIn =
+  def apply(req: ClientOut.AnaMove): ClientIn = {
     Monitor.time(_.chessMoveTime) {
       try {
         chess
-          .Game(req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
-          .toOption flatMap { case (game, move) =>
-          game.pgnMoves.lastOption map { san =>
-            makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
+          .Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion)
+          .toOption flatMap {
+          case (game, move) => {
+            game.pgnMoves.lastOption map { san =>
+              makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
+            }
           }
         } getOrElse ClientIn.StepFailure
       } catch {
@@ -30,11 +32,12 @@ object Chess {
           ClientIn.StepFailure
       }
     }
+  }
 
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
-        chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.pos).toOption flatMap {
+        chess.Game(req.variant.some, Some(req.fen.value)).drop(req.role, req.pos).toOption flatMap {
           case (game, drop) =>
             game.pgnMoves.lastOption map { san =>
               makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
@@ -42,7 +45,7 @@ object Chess {
         } getOrElse ClientIn.StepFailure
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
-          logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
+          logger.warn(s"${req.fen} ${req.variant} ${req.role}*${req.pos}", e)
           ClientIn.StepFailure
       }
     }
@@ -52,10 +55,10 @@ object Chess {
       ClientIn.Dests(
         path = req.path,
         dests = {
-          if (req.variant.standard && req.fen == chess.format.Forsyth.initial && req.path.value.isEmpty)
+          if (req.variant.standard && req.fen.value == chess.format.Forsyth.initial && req.path.value.isEmpty)
             initialDests
           else {
-            val sit = chess.Game(req.variant.some, Some(req.fen)).situation
+            val sit = chess.Game(req.variant.some, Some(req.fen.value)).situation
             if (sit.playable(false)) json.destString(sit.destinations) else ""
           }
         },
@@ -81,7 +84,7 @@ object Chess {
       chapterId: Option[ChapterId]
   ): ClientIn.Node = {
     val movable = game.situation playable false
-    val fen     = chess.format.Forsyth >> game
+    val fen     = FEN(chess.format.Forsyth >> game)
     ClientIn.Node(
       path = path,
       id = UciCharPair(move.uci),
@@ -100,7 +103,7 @@ object Chess {
     )
   }
 
-  private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
+  private val initialDests = "aj fonp uD gpo vE clm wF dmln sB qponmlr ir tC enmo yH zI AJ xG"
 
   object json {
     implicit val fenWrite         = Writes[FEN] { fen => JsString(fen.value) }
@@ -121,23 +124,24 @@ object Chess {
     def destString(dests: Map[Pos, List[Pos]]): String = {
       val sb    = new java.lang.StringBuilder(80)
       var first = true
-      dests foreach { case (orig, dests) =>
-        if (first) first = false
-        else sb append " "
-        sb append orig.piotr
-        dests foreach { sb append _.piotr }
+      dests foreach {
+        case (orig, dests) =>
+          if (first) first = false
+          else sb append " "
+          sb append orig.piotr
+          dests foreach { sb append _.piotr }
       }
       sb.toString
     }
 
-    implicit val crazyhousePocketWriter: OWrites[Crazyhouse.Pocket] = OWrites { v =>
+    implicit val crazyhousePocketWriter: OWrites[Standard.Pocket] = OWrites { v =>
       JsObject(
-        Crazyhouse.storableRoles.flatMap { role =>
+        Standard.storableRoles.flatMap { role =>
           Some(v.roles.count(role == _)).filter(0 < _).map { count => role.name -> JsNumber(count) }
         }
       )
     }
-    implicit val crazyhouseDataWriter: OWrites[chess.variant.Crazyhouse.Data] = OWrites { v =>
+    implicit val crazyhouseDataWriter: OWrites[chess.variant.Standard.Data] = OWrites { v =>
       Json.obj("pockets" -> List(v.pockets.white, v.pockets.black))
     }
   }

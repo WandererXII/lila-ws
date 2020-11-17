@@ -66,10 +66,6 @@ object LilaIn {
     def write = s"disconnect/sris ${commas(sris)}"
   }
 
-  case class Counters(members: Int, rounds: Int) extends Lobby {
-    def write = s"counters $members $rounds"
-  }
-
   case class KeepAlives(roomIds: Iterable[RoomId]) extends AnyRoom {
     def write = s"room/alives ${commas(roomIds)}"
   }
@@ -88,8 +84,8 @@ object LilaIn {
 
   case class RoomSetVersions(versions: Iterable[(String, SocketVersion)]) extends AnyRoom {
     def write =
-      s"room/versions ${commas(versions.map { case (r, v) =>
-        s"$r:$v"
+      s"room/versions ${commas(versions.map {
+        case (r, v) => s"$r:$v"
       })}"
   }
 
@@ -156,7 +152,7 @@ object LilaIn {
     def write = s"challenge/pings ${commas(ids)}"
   }
 
-  case class ReqResponse(reqId: Int, value: String) extends Study with Simul with Site {
+  case class ReqResponse(reqId: Int, value: String) extends Study with Site {
     def write = s"req/response $reqId $value"
   }
 

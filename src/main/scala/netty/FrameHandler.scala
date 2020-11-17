@@ -34,7 +34,7 @@ final private class FrameHandler(implicit ec: ExecutionContext)
             case ClientOut.WrongHole =>
               Monitor.clientOutWrongHole.increment()
 
-            case out =>
+            case out =>{
               Option(ctx.channel.attr(key.client).get) match {
                 case Some(clientFu) =>
                   clientFu.value match {
@@ -42,11 +42,11 @@ final private class FrameHandler(implicit ec: ExecutionContext)
                     case None         => clientFu foreach (_ ! out)
                   }
                 case None => logger.warn(s"No client actor to receive $out")
-              }
+              }}
           }
         }
       case frame =>
-        logger.info("unsupported frame type: " + frame.getClass.getName)
+        logger.info("unsupported frame type: " + frame.getClass().getName())
     }
 }
 

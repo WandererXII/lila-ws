@@ -41,8 +41,9 @@ object SiteClientActor {
         }
 
       }
-      .receiveSignal { case (ctx, PostStop) =>
-        onStop(state, deps, ctx)
-        Behaviors.same
+      .receiveSignal {
+        case (ctx, PostStop) =>
+          onStop(state, deps, ctx)
+          Behaviors.same
       }
 }

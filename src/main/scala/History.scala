@@ -22,7 +22,7 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
         if (allEvents.headOption.fold(true)(_.version <= since)) Some(Nil)
         else {
           val events = allEvents.takeWhile(_.version > since)
-          if (events.sizeIs == events.headOption.fold(0)(_.version.value) - since.value) Some(events)
+          if (events.size == events.headOption.fold(0)(_.version.value) - since.value) Some(events)
           else None
         }
       }
@@ -38,7 +38,7 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
   def allVersions: Array[(String, SocketVersion)] = {
     val res = scala.collection.mutable.ArrayBuffer.empty[(String, SocketVersion)]
     histories.forEach { (key, events) =>
-      events.headOption foreach { event => res += (key -> event.version) }
+      events.headOption foreach { event => res += (key.toString -> event.version) }
     }
     res.toArray
   }

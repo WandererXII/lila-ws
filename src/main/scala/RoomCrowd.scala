@@ -38,16 +38,13 @@ final class RoomCrowd(
   def isPresent(roomId: RoomId, userId: User.ID): Boolean =
     Option(rooms get roomId).exists(_.users contains userId)
 
-  def filterPresent(roomId: RoomId, userIds: Set[User.ID]): Set[User.ID] =
-    Option(rooms get roomId).fold(Set.empty[User.ID])(_.users.keySet intersect userIds)
-
   private def publish(roomId: RoomId, room: RoomState): Unit =
     outputBatch(outputOf(roomId, room))
 
   private val outputBatch = groupedWithin[Output](1024, 1.second) { outputs =>
     outputs
-      .foldLeft(Map.empty[RoomId, Output]) { case (crowds, crowd) =>
-        crowds.updated(crowd.roomId, crowd)
+      .foldLeft(Map.empty[RoomId, Output]) {
+        case (crowds, crowd) => crowds.updated(crowd.roomId, crowd)
       }
       .values foreach { output =>
       json room output foreach {

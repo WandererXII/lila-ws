@@ -37,7 +37,7 @@ object ClientOut {
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId],
-      promotion: Option[chess.PromotableRole],
+      promotion: Boolean,
       payload: JsObject
   ) extends ClientOutSite
 
@@ -104,17 +104,18 @@ object ClientOut {
 
   // impl
 
-  def parse(str: String): Try[ClientOut] =
+  def parse(str: String): Try[ClientOut] = {
     if (str == "null" || str == """{"t":"p"}""") emptyPing
     else
       Try(Json parse str) map {
         case o: JsObject =>
           o str "t" flatMap {
             case "p" => Some(Ping(o int "l"))
-            case "startWatching" =>
+            case "startWatching" => {
               o str "d" map { d =>
                 Watch(d.split(" ").take(16).map(Game.Id.apply).toSet)
               } orElse Some(Ignore) // old apps send empty watch lists
+            }
             case "moveLat"           => Some(MoveLat)
             case "notified"          => Some(Notified)
             case "following_onlines" => Some(FollowingOnline)
@@ -128,19 +129,19 @@ object ClientOut {
             case "anaMove" =>
               for {
                 d    <- o obj "d"
-                orig <- d str "orig" flatMap Pos.fromKey
-                dest <- d str "dest" flatMap Pos.fromKey
+                orig <- d str "orig" flatMap Pos.posAt
+                dest <- d str "dest" flatMap Pos.posAt
                 path <- d str "path"
                 fen  <- d str "fen"
                 variant   = dataVariant(d)
                 chapterId = d str "ch" map ChapterId.apply
-                promotion = d str "promotion" flatMap chess.Role.promotable
+                promotion = (d \ "promotion").as[Boolean]
               } yield AnaMove(orig, dest, FEN(fen), Path(path), variant, chapterId, promotion, o)
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
                 role <- d str "role" flatMap chess.Role.allByName.get
-                pos  <- d str "pos" flatMap Pos.fromKey
+                pos  <- d str "pos" flatMap Pos.posAt
                 path <- d str "path"
                 fen  <- d str "fen"
                 variant   = dataVariant(d)
@@ -194,7 +195,7 @@ object ClientOut {
               } yield RoundHold(mean, sd)
             case "berserk"      => Some(RoundBerserk(o obj "d" flatMap (_ int "a")))
             case "rep"          => o obj "d" flatMap (_ str "n") map RoundSelfReport.apply
-            case "flag"         => o str "d" flatMap Color.fromName map RoundFlag.apply
+            case "flag"         => o str "d" flatMap Color.apply map RoundFlag.apply
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
             case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
@@ -215,17 +216,19 @@ object ClientOut {
           } getOrElse Unexpected(o)
         case js => Unexpected(js)
       }
+  }
 
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 
   private def dataVariant(d: JsObject): Variant = Variant.orDefault(d str "variant" getOrElse "")
 
-  private def parseOldMove(d: JsObject) =
+  private def parseOldMove(d: JsObject) = // todo
     for {
       orig <- d str "from"
       dest <- d str "to"
-      prom = d str "promotion"
-      move <- Uci.Move.fromStrings(orig, dest, prom)
+      prom = (d \ "promotion").as[Boolean]
+      umoves = orig + dest + {if(prom) "+" else ""}
+      move <- Uci.Move(umoves)
     } yield move
 
   private def parseLag(d: JsObject) =

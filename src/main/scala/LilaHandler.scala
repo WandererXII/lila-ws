@@ -45,7 +45,7 @@ final class LilaHandler(
     case ApiUserOnline(user, true) =>
       clients ! Clients.Start(
         ApiActor start ApiActor.Deps(User(user), services),
-        Promise[_root_.lila.ws.Client]()
+        Promise[_root_.lila.ws.Client]
       )
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
 
@@ -79,8 +79,6 @@ final class LilaHandler(
   }
 
   private val simulHandler: Emit[LilaOut] = {
-    case LilaOut.RoomFilterPresent(reqId, roomId, userIds) =>
-      lila.emit.simul(LilaIn.ReqResponse(reqId, roomCrowd.filterPresent(roomId, userIds).mkString(",")))
     case LilaBoot => roomBoot(_.idFilter.simul, lila.emit.simul)
     case msg      => roomHandler(msg)
   }
@@ -104,9 +102,9 @@ final class LilaHandler(
           val allAbsent = standby diff present
           lila.emit.tour(LilaIn.WaitingUsers(roomId, name, present, standby))
           val absent = {
-            if (allAbsent.sizeIs > 100) util.Util.random.shuffle(allAbsent) take 80
+            if (allAbsent.size > 100) scala.util.Random.shuffle(allAbsent) take 80
             else allAbsent
-          }
+          }.toSet
           if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
       }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
@@ -128,7 +126,7 @@ final class LilaHandler(
         val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
         History.round.add(gameId, versioned)
         publish(_ room gameId, versioned)
-        if (tpe == "move" || tpe == "drop") Fens.move(gameId, data, flags.moveBy)
+        if (tpe == "move" || tpe == "drop") Fens.move(gameId, data)
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
       case RoundResyncPlayer(fullId) =>
         publish(_ room RoomId(fullId.gameId), ClientIn.RoundResyncPlayer(fullId.playerId))
@@ -148,9 +146,7 @@ final class LilaHandler(
           friendList.startPlaying(u)
           publish(_ userTv u, ClientIn.Resync)
         }
-      case GameFinish(gameId, winner, users) =>
-        users foreach friendList.stopPlaying
-        Fens.finish(gameId, winner)
+      case GameFinish(users) => users foreach friendList.stopPlaying
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
         lila.status.setOnline { () =>

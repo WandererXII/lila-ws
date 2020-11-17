@@ -75,10 +75,11 @@ object LobbyClientActor {
         }
 
       }
-      .receiveSignal { case (ctx, PostStop) =>
-        onStop(state.site, deps, ctx)
-        Bus.unsubscribe(Bus.channel.lobby, ctx.self)
-        deps.services.lobby.disconnect(deps.req.sri)
-        Behaviors.same
+      .receiveSignal {
+        case (ctx, PostStop) =>
+          onStop(state.site, deps, ctx)
+          Bus.unsubscribe(Bus.channel.lobby, ctx.self)
+          deps.services.lobby.disconnect(deps.req.sri)
+          Behaviors.same
       }
 }
