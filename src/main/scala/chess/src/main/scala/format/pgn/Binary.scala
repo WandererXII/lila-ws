@@ -25,7 +25,7 @@ object Binary {
     val promotionInts: Map[String, Int] = Map("" -> 0, "T" -> 1, "U" -> 2, "M" -> 3, "A" -> 4, "H" -> 6, "D" -> 7)
     val promotionStrs: Map[Int, String] = promotionInts map { case (k, v) => v -> k }
     val checkInts: Map[String, Int]     = Map("" -> 0, "+" -> 1, "=" -> 2)
-    val checkStrs: Map[Int, String]     = checkInts map { case (k, v) => v -> k }
+    val checkStrs: Map[Int, String]     = (checkInts map { case (k, v) => v -> k }) ++ Map(3 -> "+")
   }
 
   private object Reader {
@@ -41,9 +41,9 @@ object Binary {
       bs match {
         case _ if pliesToGo <= 0 => Nil
         case Nil                 => Nil
-        case b1 :: b2 :: rest if moveType(b1) == MoveType.SimplePiece =>
+        case b1 :: b2 :: rest if (moveType(b1) == MoveType.SimplePiece) =>
           simplePiece(b1, b2) :: intMoves(rest, pliesToGo - 1)
-        case b1 :: b2 :: b3 :: rest if moveType(b1) == MoveType.FullPiece =>
+        case b1 :: b2 :: b3 :: rest if (moveType(b1) == MoveType.FullPiece) =>
           fullPiece(b1, b2, b3) :: intMoves(rest, pliesToGo - 1)
         case x => !!(x map showByte mkString ",")
       }
@@ -77,11 +77,18 @@ object Binary {
     def fullPiece(b1: Int, b2: Int, b3: Int): String = {
       pieceStrs(b2 >> 4) match {
         case piece => {
-          val pos     = posString(right(b1, 7))
-          val capture = if (bitAt(b2, 2)) "x" else ""
-          val check   = checkStrs(cut(b2, 4, 2))
           val from    = posString(right(b3, 7))
-          s"$piece$from$capture$pos$check"
+          val pos     = posString(right(b1, 7))
+          if(!bitAt(b2, 1)){
+            val capture = if (bitAt(b2, 3)) "x" else ""
+            val check = if(bitAt(b2, 4)) "+" else ""
+            s"$piece$from$capture$pos$check"
+          }
+          else{
+            val capture = if (bitAt(b2, 2)) "x" else ""
+            val check   = checkStrs(cut(b2, 4, 2))
+            s"$piece$from$capture$pos$check"
+          }
         }
       }
     }
@@ -135,11 +142,11 @@ object Binary {
         (dropPieceInts(piece) << 5) + 1
       )
 
-    // 1. 1(1), positionTo(7); 2. pieceType(4), check(2), capture(1), 0(0); 3. positionFrom(7)
+    // 1. 1(1), positionTo(7); 2. pieceType(4), check(2), capture(1), 1(1); 3. positionFrom(7)
     def fullPiece(piece: String, orig: String, pos: String, capture: String, check: String) =
       List(
         (1 << 7) + posInt(pos),
-        (pieceInts(piece) << 4) + (checkInts(check) << 3) + (boolInt(capture) << 2),
+        (pieceInts(piece) << 4) + (checkInts(check) << 2) + (boolInt(capture) << 1) + 1,
         posInt(orig)
       )
 

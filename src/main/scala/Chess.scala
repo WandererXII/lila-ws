@@ -5,6 +5,8 @@ import play.api.libs.json._
 import chess.format.{ FEN, Uci, UciCharPair }
 import chess.opening.{ FullOpening, FullOpeningDB }
 import chess.Pos
+import chess.{Data => ChessData}
+import chess.{Pocket, Pockets}
 import chess.variant.{ Standard, Variant }
 import com.typesafe.scalalogging.Logger
 
@@ -134,14 +136,14 @@ object Chess {
       sb.toString
     }
 
-    implicit val crazyhousePocketWriter: OWrites[Standard.Pocket] = OWrites { v =>
+    implicit val crazyhousePocketWriter: OWrites[Pocket] = OWrites { v =>
       JsObject(
-        Standard.storableRoles.flatMap { role =>
+        ChessData.storableRoles.flatMap { role =>
           Some(v.roles.count(role == _)).filter(0 < _).map { count => role.name -> JsNumber(count) }
         }
       )
     }
-    implicit val crazyhouseDataWriter: OWrites[chess.variant.Standard.Data] = OWrites { v =>
+    implicit val crazyhouseDataWriter: OWrites[ChessData] = OWrites { v =>
       Json.obj("pockets" -> List(v.pockets.white, v.pockets.black))
     }
   }

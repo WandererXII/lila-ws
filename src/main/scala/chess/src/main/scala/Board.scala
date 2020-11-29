@@ -1,6 +1,6 @@
 package chess
 
-import Pos.posAt
+import Pos._
 import scalaz.Validation.FlatMap._
 import scalaz.Validation.{ failureNel, success }
 import variant.{ Standard, Variant }
@@ -9,7 +9,7 @@ case class Board(
     pieces: PieceMap,
     history: History,
     variant: Variant,
-    crazyData: Option[Standard.Data] = None
+    crazyData: Option[Data] = None
 ) {
 
   import implicitFailures._
@@ -126,18 +126,15 @@ case class Board(
   def withPieces(newPieces: PieceMap) = copy(pieces = newPieces)
 
   def withVariant(v: Variant): Board = {
-    if (v == Standard)
-      copy(variant = v).ensureCrazyData
-    else
-      copy(variant = v)
+    copy(variant = v).ensureCrazyData
   }
 
-  def withCrazyData(data: Standard.Data)         = copy(crazyData = Some(data))
-  def withCrazyData(data: Option[Standard.Data]) = copy(crazyData = data)
-  def withCrazyData(f: Standard.Data => Standard.Data): Board =
-    withCrazyData(f(crazyData | Standard.Data.init))
+  def withCrazyData(data: Data)         = copy(crazyData = Some(data))
+  def withCrazyData(data: Option[Data]) = copy(crazyData = data)
+  def withCrazyData(f: Data => Data): Board =
+    withCrazyData(f(crazyData | Data.init))
 
-  def ensureCrazyData = withCrazyData(crazyData | Standard.Data.init)
+  def ensureCrazyData = withCrazyData(crazyData | Data.init)
 
   def unmovedRooks =
     UnmovedRooks {
@@ -175,13 +172,43 @@ case class Board(
   def count(p: Piece): Int = pieces.values count (_ == p)
   def count(c: Color): Int = pieces.values count (_.color == c)
 
-  def perpetualCheck(c:Color): Boolean = {
-    val checks = history.checkCount
-    history.fivefoldRepetition && (c.fold(checks.white, checks.black) >= 4)
+  def kingsEntered: Boolean = {
+    ((kingPosOf(Black) exists (pos => Black.promotableZone contains pos.y)) &&
+    (kingPosOf(White) exists (pos => White.promotableZone contains pos.y)))
   }
 
-  def autoDraw(c: Color): Boolean =
-    history.fivefoldRepetition && !perpetualCheck(c)
+  def tryRule: Boolean = {
+    kingsEntered && ((kingPosOf(White) == posAt(5, 9)) || (kingPosOf(Black) == posAt(5, 1)))
+  }
+
+  def tryRuleColor(color: Color): Option[Color] = {
+    color match {
+      case White if (kingPosOf(White) == posAt(5, 9)) => Some(White)
+      case Black if (kingPosOf(Black) == posAt(5, 1)) => Some(Black)
+      case _ => None
+    }
+  }
+
+  def perpetualCheckColor: Option[Color] = {
+    val checks = history.checkCount
+    if(checks.white >= 4 && checks.black >=4)
+      return None
+    else if(checks.white >= 4)
+      return Some(Black)
+    else if(checks.black >= 4)
+      return Some(White)
+    else
+      return None
+  }
+
+  def perpetualCheck: Boolean = {
+    val checks = history.checkCount
+    history.fivefoldRepetition && (checks.white >= 4 || checks.black >=4)
+  }
+
+  def autoDraw: Boolean = {
+    history.fivefoldRepetition && !perpetualCheck
+  }
 
   def situationOf(color: Color) = Situation(this, color)
 
@@ -207,5 +234,5 @@ object Board {
   def empty(variant: Variant): Board = Board(Nil, variant)
 
   private def variantCrazyData(variant: Variant) =
-    (variant == Standard) option Standard.Data.init
+    Some(Data.init)
 }

@@ -4,6 +4,7 @@ package ipc
 import chess.format.{ FEN, Uci, UciCharPair }
 import chess.opening.FullOpening
 import chess.variant.Standard
+import chess.{Data => ChessData}
 import play.api.libs.json._
 
 import lila.ws.util.LilaJsObject.augment
@@ -146,7 +147,7 @@ object ClientIn {
       dests: Map[chess.Pos, List[chess.Pos]],
       opening: Option[chess.opening.FullOpening],
       drops: Option[List[chess.Pos]],
-      crazyData: Option[Standard.Data],
+      crazyData: Option[ChessData],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =

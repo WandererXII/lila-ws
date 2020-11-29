@@ -118,8 +118,4 @@ case object Horde
       else fortress
     } else fortress
   }
-
-  override def isUnmovedPawn(color: Color, pos: Pos) =
-    if (color.white) pos.y == 1 || pos.y == 2
-    else pos.y == 7
 }

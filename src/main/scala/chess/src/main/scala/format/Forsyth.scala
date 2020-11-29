@@ -53,22 +53,25 @@ object Forsyth {
 
   def <<<(rawSource: String): Option[SituationPlus] = <<<@(Standard, rawSource)
 
+  def fixSfen(sfen: String): String =
+    sfen.replaceAll("\\+S", "A").replaceAll("\\+s", "a").replaceAll("\\+N", "M").replaceAll("\\+n", "m").replaceAll("\\+L", "U").replaceAll("\\+l", "u").replaceAll("\\+P", "T").replaceAll("\\+p", "t").replaceAll("\\+R", "D").replaceAll("\\+r", "d").replaceAll("\\+B", "H").replaceAll("\\+b", "h")
+
   // only cares about pieces positions on the board (first part of FEN string)
   def makeBoard(variant: Variant, rawSource: String): Option[Board] =
     read(rawSource) { fen =>
       val splitted  = fen.split(' ')
-      val positions = splitted.lift(0).get
+      val positions = fixSfen(splitted.lift(0).get)
       if (positions.count('/' ==) != 8) {
         return None
       }
       makePiecesList(positions.toList, 1, 9) map {
         case pieces =>
-          val board = Board(pieces, Standard)
+          val board = Board(pieces, variant)
           if (splitted.length < 3 || splitted.lift(2).get == "-") board
           else {
             val pockets        = pocketStringList(splitted.lift(2).get.toList)
             val (white, black) = pockets.flatMap(Piece.fromChar).partition(_ is White)
-            import chess.variant.Standard.{ Data, Pocket, Pockets }
+            import chess.{ Data, Pocket, Pockets }
             board.withCrazyData(
               _.copy(
                 pockets = Pockets(
@@ -132,7 +135,7 @@ object Forsyth {
 
   def exportCrazyPocket(board: Board) = {
     val pocketStr = board.crazyData match {
-      case Some(variant.Standard.Data(pockets, _)) =>
+      case Some(chess.Data(pockets, _)) =>
         pockets.white.roles.map(_.forsythUpper).mkString +
         pockets.black.roles.map(_.forsyth).mkString
       case _ => ""
