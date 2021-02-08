@@ -48,7 +48,6 @@ object Fens {
     games.computeIfPresent(
       gameId,
       (_, watched) => {
-        println(json.value)
         json.value match {
           case MoveRegex(uciS, fenS, pocketJson) =>
             Uci(uciS).fold(watched) { lastUci =>
