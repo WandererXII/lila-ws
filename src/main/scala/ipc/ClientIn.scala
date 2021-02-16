@@ -38,14 +38,15 @@ object ClientIn {
     )
   }
 
-  case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN) extends ClientIn {
+  case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN, pocketJson: String) extends ClientIn {
     def write =
       cliMsg(
         "fen",
         Json.obj(
           "id"  -> gameId.value,
           "lm"  -> lastUci,
-          "fen" -> fen
+          "fen" -> fen,
+          "pocket" -> pocketJson
         )
       )
   }
