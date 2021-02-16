@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import org.joda.time.DateTime
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ AsyncDriver, DefaultDB, MongoConnection, ReadConcern, ReadPreference }
+import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference }
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
@@ -14,13 +14,27 @@ import scala.util.{ Success, Try }
 
 final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
-  private val uri        = config.getString("mongo.uri")
   private val driver     = new AsyncDriver(Some(config.getConfig("reactivemongo")))
-  private val parsedUri  = MongoConnection.fromString(uri)
-  private val connection = parsedUri.flatMap(driver.connect)
 
-  private def db: Future[DefaultDB]   = connection.flatMap(_ database "lishogi")
-  private def collNamed(name: String) = db.map(_ collection name)(parasitic)
+  private val mainConnection =
+    MongoConnection.fromString(config.getString("mongo.uri")) flatMap { parsedUri =>
+      driver.connect(parsedUri).map(_ -> parsedUri.db)
+    }
+  private def mainDb: Future[DB] =
+    mainConnection flatMap { case (conn, dbName) =>
+      conn database dbName.getOrElse("lishogi")
+    }
+
+  private val studyConnection =
+    MongoConnection.fromString(config.getString("study.mongo.uri")) flatMap { parsedUri =>
+      driver.connect(parsedUri).map(_ -> parsedUri.db)
+    }
+  private def studyDb: Future[DB] =
+    studyConnection flatMap { case (conn, dbName) =>
+      conn database dbName.getOrElse("lishogi")
+  }
+
+  private def collNamed(name: String) = mainDb.map(_ collection name)(parasitic)
   def securityColl                    = collNamed("security")
   def userColl                        = collNamed("user4")
   def coachColl                       = collNamed("coach")
@@ -29,12 +43,12 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def tourColl                        = collNamed("tournament2")
   def tourPlayerColl                  = collNamed("tournament_player")
   def tourPairingColl                 = collNamed("tournament_pairing")
-  def studyColl                       = collNamed("study")
   def gameColl                        = collNamed("game5")
   def challengeColl                   = collNamed("challenge")
   def relationColl                    = collNamed("relation")
   def teamColl                        = collNamed("team")
   def swissColl                       = collNamed("swiss")
+  def studyColl                       = studyDb.map(_ collection "study")(parasitic)
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A]    = coachColl flatMap f
@@ -124,7 +138,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         for {
           doc     <- docOpt
           members <- doc.getAsOpt[BSONDocument]("members")
-        } yield members.elements.map { case BSONElement(key, _) => key }.toSet
+        } yield members.elements.collect { case BSONElement(key, _) => key }.toSet
       } map (_ getOrElse Set.empty)
     }
 
