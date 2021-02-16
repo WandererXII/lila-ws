@@ -1,4 +1,4 @@
-Handle incoming websocket traffic for [lichess.org](https://lichess.org).
+Handle incoming websocket traffic for [lishogi.org](https://lishogi.org).
 
 ```
 lila <-> redis <-> lila-ws <-> websocket <-> client
@@ -20,7 +20,7 @@ Custom config file example:
 include "application"
 http.port = 8080
 netty.useEpoll = true
-mongo.uri = "mongodb://localhost:27017/lichess"
+mongo.uri = "mongodb://localhost:27017/lishogi"
 redis.uri = "redis://127.0.0.1"
 ```
 
