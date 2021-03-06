@@ -1,6 +1,6 @@
 package chess
 
-import Pos._
+import Pos.posAt
 import scalaz.Validation.FlatMap._
 import scalaz.Validation.{ failureNel, success }
 import variant.{ Standard, Variant }
@@ -194,9 +194,9 @@ case class Board(
     if(checks.white >= 4 && checks.black >=4)
       return None
     else if(checks.white >= 4)
-      return Some(Black)
-    else if(checks.black >= 4)
       return Some(White)
+    else if(checks.black >= 4)
+      return Some(Black)
     else
       return None
   }

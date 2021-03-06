@@ -25,6 +25,7 @@ object Binary {
     val promotionInts: Map[String, Int] = Map("" -> 0, "T" -> 1, "U" -> 2, "M" -> 3, "A" -> 4, "H" -> 6, "D" -> 7)
     val promotionStrs: Map[Int, String] = promotionInts map { case (k, v) => v -> k }
     val checkInts: Map[String, Int]     = Map("" -> 0, "+" -> 1, "=" -> 2)
+    // Dont's question this, mistakes were made
     val checkStrs: Map[Int, String]     = (checkInts map { case (k, v) => v -> k }) ++ Map(3 -> "+")
   }
 
@@ -165,17 +166,13 @@ object Binary {
       }
 
     val pieceR       = "([KRNBSLAMUDHTGP])"
-    //val fileR        = "(?:([a-i])x)?"
     val posR         = "([a-i][1-9])"
     val captureR     = "(x?)"
     val checkR       = "([\\+=]?)"
-    //val promotionR   = "(?:\\=?([AMUDHT]))?"
     val origR        = "([a-i][1-9])".r
 
     // todo - checkR will be promotion
-    //val SimplePieceR = s"^$pieceR$captureR$posR$checkR$promotionR$$".r
     val SimplePieceR = s"^$pieceR$captureR$posR$checkR$$".r
-    //val FullPieceR   = s"^$pieceR$origR$captureR$posR$checkR$promotionR$$".r
     val FullPieceR   = s"^$pieceR$origR$captureR$posR$checkR$$".r
     val DropR        = s"^([RNBSGLP])\\*$posR$$".r
   }

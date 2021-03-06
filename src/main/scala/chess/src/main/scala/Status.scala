@@ -51,7 +51,7 @@ object Status {
     s.id >= Mate.id && s.id != Cheat.id
   }
 
-  val finishedWithWinner = List(Mate, Resign, Timeout, Outoftime, Cheat, NoStart, VariantEnd, Stalemate)
+  val finishedWithWinner = List(Mate, Resign, Timeout, Outoftime, Cheat, NoStart, VariantEnd, Stalemate, Impasse, PerpetualCheck)
 
   val byId = all map { v =>
     (v.id, v)

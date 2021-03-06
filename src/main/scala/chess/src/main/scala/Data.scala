@@ -13,7 +13,6 @@ case class Data(
     def store(piece: Piece, from: Pos) =
       copy(
         pockets = pockets store Piece(piece.color, Role.demotesTo(piece.role)),
-        promoted = promoted - from
       )
 
     def promote(pos: Pos) = copy(promoted = promoted + pos)
@@ -45,6 +44,7 @@ case class Pockets(white: Pocket, black: Pocket) {
       copy(black = black store piece.role),
       copy(white = white store piece.role)
     )
+  def keys: String = white.roles.map(_.forsyth).mkString("").toUpperCase() + black.roles.map(_.forsyth).mkString("").toLowerCase()
 }
 
 case class Pocket(roles: List[Role]) {
