@@ -1,4 +1,9 @@
 logs/
 target/
+project/metals.sbt
+project/project
+project/.bloop
 RUNNING_PID
-.vscode/
+.bloop
+.metals
+.vscode
