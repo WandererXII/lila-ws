@@ -172,7 +172,7 @@ abstract class Variant private[variant] (
     if(situation.checkMate && lastMove.isDefined && lastMove.get.uci(0) == 'P') Some(situation.color)
     else if (situation.checkMate) Some(!situation.color)
     else if (situation.staleMate) Some(!situation.color)
-    else if(situation.board.tryRule) situation.board.tryRuleColor(!situation.color)
+    else if(situation.board.tryRule) situation.board.tryRuleColor
     else if(situation.board.perpetualCheck) situation.board.perpetualCheckColor
     else None
   }
@@ -327,17 +327,17 @@ object Variant {
         (
           pos,
           y match {
-            case 1 => White - rank1(x - 1)
-            case 3 => White.pawn
-            case 7 => Black.pawn
-            case 9 => Black - rank1(x - 1)
+            case 1 => Sente - rank1(x - 1)
+            case 3 => Sente.pawn
+            case 7 => Gote.pawn
+            case 9 => Gote - rank1(x - 1)
           }
         )
       }
     }).flatten.toMap ++ Map(
-      posAt(2, 2).get -> (White - rank2(1)),
-      posAt(8, 2).get -> (White - rank2(0)),
-      posAt(2, 8).get -> (Black - rank2(0)),
-      posAt(8, 8).get -> (Black - rank2(1))
+      posAt(2, 2).get -> (Sente - rank2(1)),
+      posAt(8, 2).get -> (Sente - rank2(0)),
+      posAt(2, 8).get -> (Gote - rank2(0)),
+      posAt(8, 8).get -> (Gote - rank2(1))
     )
 }

@@ -81,8 +81,8 @@ case class Clock(
 
         val moveTime = (elapsed - lagComp) nonNeg
 
-        val clockActive  = gameActive && (player.hasPeriodsLeft || moveTime <= player.remaining)
-        val updatePeriod = clockActive && moveTime > player.remaining
+        val clockActive  = gameActive && (player.hasPeriodsLeft || moveTime < player.remaining)
+        val updatePeriod = clockActive && moveTime >= player.remaining
         val usingByo     = player.isUsingByoyomi || updatePeriod
 
         val inc          = clockActive ?? player.increment
@@ -240,11 +240,13 @@ object Clock {
   // All unspecified durations are expressed in seconds
   case class Config(limitSeconds: Int, incrementSeconds: Int, byoyomiSeconds: Int, periods: Int) {
     
-    def berserkable = incrementSeconds == 0 || limitSeconds > 0
+    def berserkable = (incrementSeconds == 0 && byoyomiSeconds == 0) || limitSeconds > 0
 
-    def emergSeconds = math.min(60, math.max(10, limitSeconds / 8))
+    // Activate low time warning when between 10 and 90 seconds remain
+    def emergSeconds = math.min(90, math.max(10, limitSeconds / 8))
 
-    def estimateTotalSeconds = limitSeconds + 40 * incrementSeconds + 25 * periods * byoyomiSeconds
+    // Estimate 60 moves (per player) per game
+    def estimateTotalSeconds = limitSeconds + 60 * incrementSeconds + 25 * periods * byoyomiSeconds
 
     def estimateTotalTime = Centis.ofSeconds(estimateTotalSeconds)
 
@@ -274,7 +276,7 @@ object Clock {
 
     def incrementString: String = if(hasIncrement) s"+${incrementSeconds}" else ""
 
-    def byoyomiString: String = if(hasByoyomi) s"|${byoyomiSeconds}" else ""
+    def byoyomiString: String = if(hasByoyomi || !hasIncrement) s"|${byoyomiSeconds}" else ""
 
     def periodsString: String = if(periods > 1) s"(${periods}x)" else ""
 
@@ -285,12 +287,12 @@ object Clock {
     def startsAtZero = limitSeconds == 0 && hasByoyomi
 
     def berserkPenalty =
-      if (limitSeconds < 40 * incrementSeconds || limitSeconds < 25 * byoyomiSeconds) Centis(0)
+      if (limitSeconds < 60 * incrementSeconds || limitSeconds < 25 * byoyomiSeconds) Centis(0)
       else Centis(limitSeconds * (100 / 2))
 
     def initTime = {
-      if (limitSeconds == 0 && hasByoyomi) byoyomi atLeast Centis(300)
-      else if (limitSeconds == 0) increment atLeast Centis(300)
+      if (limitSeconds == 0 && hasByoyomi) byoyomi atLeast Centis(500)
+      else if (limitSeconds == 0) increment atLeast Centis(500)
       else limit
     }
   }
@@ -321,7 +323,7 @@ object Clock {
     val player = ClockPlayer.withConfig(config)
     Clock(
       config = config,
-      color = White,
+      color = Sente,
       players = Color.Map(player, player),
       timer = None
     )
