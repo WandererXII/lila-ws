@@ -144,7 +144,7 @@ object LilaIn {
   case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round {
     private def one(r: RoundCrowd.Output) =
       if (r.isEmpty) r.room.roomId.value
-      else s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
+      else s"${r.room.roomId}${boolean(r.players.sente > 0)}${boolean(r.players.gote > 0)}"
     def write = s"r/ons ${commas(many map one)}"
   }
 
@@ -159,5 +159,5 @@ object LilaIn {
   private def commas(as: Iterable[Any]): String   = if (as.isEmpty) "-" else as mkString ","
   private def boolean(b: Boolean): String         = if (b) "+" else "-"
   private def optional(s: Option[String]): String = s getOrElse "-"
-  private def writeColor(c: Color): String        = c.fold("w", "b")
+  private def writeColor(c: Color): String        = c.fold("b", "w")
 }

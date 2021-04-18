@@ -29,8 +29,8 @@ final class CrowdJson(
       ClientIn.Crowd(
         Json
           .obj(
-            "white" -> (crowd.players.white > 0),
-            "black" -> (crowd.players.black > 0)
+            "sente" -> (crowd.players.sente > 0),
+            "gote"  -> (crowd.players.gote > 0)
           )
           .add("watchers" -> (if (crowd.room.users.nonEmpty) Some(spectators) else None))
       )
