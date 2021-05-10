@@ -119,6 +119,10 @@ object ClientActor {
         }
         state
 
+      case ClientOut.StormKey(key, pad) =>
+        clientIn(ClientIn.StormKey(deps.services.stormSign(key, pad)))
+        state
+
       case ClientOut.Ignore =>
         state
     }
