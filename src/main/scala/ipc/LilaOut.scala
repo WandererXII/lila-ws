@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import chess.Color
+import shogi.Color
 
 sealed trait LilaOut
 
@@ -88,7 +88,7 @@ object LilaOut {
   case class GameStart(users: List[User.ID])                           extends RoundOut
   case class GameFinish(users: List[User.ID])                          extends RoundOut
 
-  case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
+  case class TvSelect(gameId: Game.Id, speed: shogi.Speed, json: JsonString) extends RoundOut
 
   case class ApiUserOnline(userId: User.ID, online: Boolean) extends AnyRoomOut
   case object LilaBoot                                       extends AnyRoomOut
@@ -240,12 +240,12 @@ object LilaOut {
                 watcher = f contains 's',
                 owner = f contains 'p',
                 player =
-                  if (f contains 'b') Some(chess.Sente)
-                  else if (f contains 'w') Some(chess.Gote)
+                  if (f contains 'b') Some(shogi.Sente)
+                  else if (f contains 'w') Some(shogi.Gote)
                   else None,
                 moveBy =
-                  if (f contains 'W') Some(chess.Gote)
-                  else if (f contains 'B') Some(chess.Sente)
+                  if (f contains 'W') Some(shogi.Gote)
+                  else if (f contains 'B') Some(shogi.Sente)
                   else None,
                 troll = f contains 't'
               )
@@ -287,7 +287,7 @@ object LilaOut {
       case "tv/select" =>{
         get(args, 3) {
           case Array(gameId, speedS, data) =>
-            speedS.toIntOption flatMap chess.Speed.apply map { speed =>
+            speedS.toIntOption flatMap shogi.Speed.apply map { speed =>
               TvSelect(Game.Id(gameId), speed, JsonString(data))
             }
         }

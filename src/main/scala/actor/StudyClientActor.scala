@@ -55,12 +55,12 @@ object StudyClientActor {
             Behaviors.same
 
           case anaMove: ClientOut.AnaMove =>
-            clientIn(Chess(anaMove))
+            clientIn(Shogi(anaMove))
             forward(anaMove.payload)
             Behaviors.same
 
           case anaDrop: ClientOut.AnaDrop =>
-            clientIn(Chess(anaDrop))
+            clientIn(Shogi(anaDrop))
             forward(anaDrop.payload)
             Behaviors.same
 

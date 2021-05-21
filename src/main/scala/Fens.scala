@@ -1,7 +1,7 @@
 package lila.ws
 
 import akka.actor.typed.ActorRef
-import chess.format.{ FEN, Uci }
+import shogi.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
 
 import ipc._

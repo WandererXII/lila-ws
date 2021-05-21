@@ -1,6 +1,6 @@
 package lila.ws
 
-import chess.Color
+import shogi.Color
 import java.util.concurrent.ConcurrentHashMap
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext

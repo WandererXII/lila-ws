@@ -88,19 +88,19 @@ object ClientActor {
         state
 
       case opening: ClientOut.Opening =>
-        Chess(opening) foreach clientIn
+        Shogi(opening) foreach clientIn
         state
 
       case anaMove: ClientOut.AnaMove =>
-        clientIn(Chess(anaMove))
+        clientIn(Shogi(anaMove))
         state
 
       case anaDrop: ClientOut.AnaDrop =>
-        clientIn(Chess(anaDrop))
+        clientIn(Shogi(anaDrop))
         state
 
       case anaDests: ClientOut.AnaDests =>
-        clientIn(Chess(anaDests))
+        clientIn(Shogi(anaDests))
         state
 
       case ClientOut.MsgType(dest) =>

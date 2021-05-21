@@ -1,6 +1,6 @@
 package lila.ws
 
-import chess.Color
+import shogi.Color
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import com.typesafe.config.Config
 import org.joda.time.DateTime
@@ -156,7 +156,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     tourPairingColl flatMap {
       _.distinct[User.ID, Set](
         key = "u",
-        selector = Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> chess.Status.Mate.id))),
+        selector = Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> shogi.Status.Mate.id))),
         readConcern = ReadConcern.Local,
         collation = None
       )

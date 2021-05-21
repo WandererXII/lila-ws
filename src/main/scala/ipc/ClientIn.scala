@@ -1,10 +1,10 @@
 package lila.ws
 package ipc
 
-import chess.format.{ FEN, Uci, UciCharPair }
-import chess.opening.FullOpening
-import chess.variant.Standard
-import chess.{Data => ChessData}
+import shogi.format.{ FEN, Uci, UciCharPair }
+import shogi.opening.FullOpening
+import shogi.variant.Standard
+import shogi.{Data => ShogiData}
 import play.api.libs.json._
 
 import lila.ws.util.LilaJsObject.augment
@@ -15,7 +15,7 @@ sealed trait ClientIn extends ClientMsg {
 
 object ClientIn {
 
-  import Chess.json._
+  import Shogi.json._
 
   case object Pong extends ClientIn {
     val write = "0"
@@ -142,13 +142,13 @@ object ClientIn {
       path: Path,
       id: UciCharPair,
       ply: Int,
-      move: chess.format.Uci.WithSan,
-      fen: chess.format.FEN,
+      move: shogi.format.Uci.WithSan,
+      fen: shogi.format.FEN,
       check: Boolean,
-      dests: Map[chess.Pos, List[chess.Pos]],
-      opening: Option[chess.opening.FullOpening],
-      drops: Option[List[chess.Pos]],
-      crazyData: Option[ChessData],
+      dests: Map[shogi.Pos, List[shogi.Pos]],
+      opening: Option[shogi.opening.FullOpening],
+      drops: Option[List[shogi.Pos]],
+      crazyData: Option[ShogiData],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =
@@ -181,7 +181,7 @@ object ClientIn {
   case class Dests(
       path: Path,
       dests: String,
-      opening: Option[chess.opening.FullOpening],
+      opening: Option[shogi.opening.FullOpening],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =

@@ -1,9 +1,9 @@
 package lila.ws
 package ipc
 
-import chess.format.{ FEN, Uci }
-import chess.variant.Variant
-import chess.{ Centis, Color, MoveMetrics, Pos }
+import shogi.format.{ FEN, Uci }
+import shogi.variant.Variant
+import shogi.{ Centis, Color, MoveMetrics, Pos }
 import play.api.libs.json._
 import scala.util.{ Success, Try }
 
@@ -42,7 +42,7 @@ object ClientOut {
   ) extends ClientOutSite
 
   case class AnaDrop(
-      role: chess.Role,
+      role: shogi.Role,
       pos: Pos,
       fen: FEN,
       path: Path,
@@ -144,7 +144,7 @@ object ClientOut {
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
-                role <- d str "role" flatMap chess.Role.allByName.get
+                role <- d str "role" flatMap shogi.Role.allByName.get
                 pos  <- d str "pos" flatMap Pos.posAt
                 path <- d str "path"
                 fen  <- d str "fen"

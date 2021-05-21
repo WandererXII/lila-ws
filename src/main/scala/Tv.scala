@@ -22,7 +22,7 @@ object Tv {
         Bus.publish(_ room RoomId(gameId), cliMsg)
       }
     }
-    (if (out.speed <= chess.Speed.Bullet) fast else slow).put(out.gameId.value, true)
+    (if (out.speed <= shogi.Speed.Bullet) fast else slow).put(out.gameId.value, true)
   }
 
   def get(gameId: Game.Id): Boolean = get(gameId, fast) || get(gameId, slow)
