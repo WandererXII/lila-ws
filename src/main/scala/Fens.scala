@@ -9,7 +9,7 @@ import ipc._
 /* Manages subscriptions to FEN updates */
 object Fens {
 
-  case class Position(lastUci: Uci, fen: FEN, pocketJson: String)
+  case class Position(lastUci: Uci, fen: FEN)
   case class Watched(position: Option[Position], clients: Set[ActorRef[ClientMsg]])
 
   private val games = new ConcurrentHashMap[Game.Id, Watched](1024)
@@ -26,7 +26,7 @@ object Fens {
           }
         )
         .position foreach {
-        case Position(lastUci, fen, pocketJson) => client ! ClientIn.Fen(gameId, lastUci, fen, pocketJson)
+        case Position(lastUci, fen) => client ! ClientIn.Fen(gameId, lastUci, fen)
       }
     }
 
@@ -49,12 +49,12 @@ object Fens {
       gameId,
       (_, watched) => {
         json.value match {
-          case MoveRegex(uciS, fenS, pocketJson) =>
+          case MoveRegex(uciS, fenS) =>
             Uci(uciS).fold(watched) { lastUci =>
               val fen = FEN(fenS)
-              val msg = ClientIn.Fen(gameId, lastUci, fen, pocketJson)
+              val msg = ClientIn.Fen(gameId, lastUci, fen)
               watched.clients foreach { _ ! msg }
-              watched.copy(position = Some(Position(lastUci, fen, pocketJson)))
+              watched.copy(position = Some(Position(lastUci, fen)))
             }
           case _ => watched
         }
@@ -62,7 +62,7 @@ object Fens {
     )
   }
 
-  private val MoveRegex = """uci":"([^"]+)".+fen":"([^"]+)".+pockets":(\[[^\[]+\])""".r.unanchored
+  private val MoveRegex = """uci":"([^"]+)".+fen":"([^"]+)""".r.unanchored
 
   def size = games.size
 }

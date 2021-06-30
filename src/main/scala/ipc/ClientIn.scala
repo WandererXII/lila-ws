@@ -1,10 +1,10 @@
 package lila.ws
 package ipc
 
+import shogi.{ Hand, Hands }
 import shogi.format.{ FEN, Uci, UciCharPair }
 import shogi.opening.FullOpening
 import shogi.variant.Standard
-import shogi.{Data => ShogiData}
 import play.api.libs.json._
 
 import lila.ws.util.LilaJsObject.augment
@@ -38,7 +38,7 @@ object ClientIn {
     )
   }
 
-  case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN, pocketJson: String) extends ClientIn {
+  case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN) extends ClientIn {
     def write =
       cliMsg(
         "fen",
@@ -46,7 +46,6 @@ object ClientIn {
           "id"  -> gameId.value,
           "lm"  -> lastUci,
           "fen" -> fen,
-          "pocket" -> pocketJson
         )
       )
   }
@@ -148,7 +147,7 @@ object ClientIn {
       dests: Map[shogi.Pos, List[shogi.Pos]],
       opening: Option[shogi.opening.FullOpening],
       drops: Option[List[shogi.Pos]],
-      crazyData: Option[ShogiData],
+      crazyData: Option[Hands],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =
