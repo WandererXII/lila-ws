@@ -30,30 +30,37 @@ case class Situation(board: Board, color: Color) {
 
   def staleMate: Boolean = board.variant staleMate this
 
-  def autoDraw: Boolean = board.autoDraw // || board.variant.specialDraw(this)
+  def autoDraw: Boolean = board.autoDraw || board.variant.specialDraw(this)
 
   def opponentHasInsufficientMaterial: Boolean = board.variant.opponentHasInsufficientMaterial(this)
 
-  lazy val threefoldRepetition: Boolean = false
+  lazy val fourfoldRepetition: Boolean = board.history.fourfoldRepetition
 
   def variantEnd = board.variant specialEnd this
 
-  def tryRule = board.tryRule
+  // Not in use currently
+  def tryRule = Color.all exists { board tryRule _ }
 
-  def perpetualCheck = board.perpetualCheck
+  def impasse = board impasse color
 
-  def end: Boolean = checkMate || staleMate || autoDraw || variantEnd || tryRule || perpetualCheck
+  def perpetualCheck = board perpetualCheck
+
+  // impasse isn't here to allow studies to continue even after impasse
+  def end: Boolean = checkMate || staleMate || autoDraw || perpetualCheck || variantEnd
 
   def winner: Option[Color] = board.variant.winner(this)
 
   def playable(strict: Boolean): Boolean =
     (board valid strict) && !end && !copy(color = !color).check
 
+  def playableNoImpasse(strict: Boolean): Boolean =
+    playable(strict) && !impasse
+
   lazy val status: Option[Status] =
     if (checkMate) Status.Mate.some
     else if (variantEnd) Status.VariantEnd.some
     else if (staleMate) Status.Stalemate.some
-    else if (tryRule) Status.Impasse.some
+    else if (impasse) Status.Impasse27.some
     else if (perpetualCheck) Status.PerpetualCheck.some
     else if (autoDraw) Status.Draw.some
     else none

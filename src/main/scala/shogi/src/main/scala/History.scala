@@ -43,11 +43,7 @@ case class History(
       }
     }
 
-  def threefoldRepetition = isRepetition(4)
-
   def fourfoldRepetition = isRepetition(4)
-
-  def fivefoldRepetition = isRepetition(4)
 
   def withLastMove(m: Uci) = copy(lastMove = Some(m))
 

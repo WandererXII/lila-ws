@@ -5,8 +5,8 @@ import play.api.libs.json._
 import shogi.format.{ FEN, Uci, UciCharPair }
 import shogi.opening.{ FullOpening, FullOpeningDB }
 import shogi.Pos
-import shogi.{Data => ShogiData}
-import shogi.{Pocket, Pockets}
+import shogi.Role
+import shogi.{Hand, Hands}
 import shogi.variant.{ Standard, Variant }
 import com.typesafe.scalalogging.Logger
 
@@ -136,15 +136,16 @@ object Shogi {
       sb.toString
     }
 
-    implicit val crazyhousePocketWriter: OWrites[Pocket] = OWrites { v =>
-      JsObject(
-        ShogiData.storableRoles.flatMap { role =>
-          Some(v.roles.count(role == _)).filter(0 < _).map { count => role.name -> JsNumber(count) }
-        }
-      )
-    }
-    implicit val crazyhouseDataWriter: OWrites[ShogiData] = OWrites { v =>
-      Json.obj("pockets" -> List(v.pockets.sente, v.pockets.gote))
+  implicit val crazyhousePocketWriter: OWrites[Hand] = OWrites { h =>
+    JsObject(
+      h.roleMap.filter(kv => 0 < kv._2).map { kv =>
+        kv._1.name -> JsNumber(kv._2)
+      }
+    )
+  }
+
+  implicit val crazyhouseDataWriter: OWrites[Hands] = OWrites { v => 
+    Json.obj("pockets" -> List(v.sente, v.gote))
     }
   }
 }
