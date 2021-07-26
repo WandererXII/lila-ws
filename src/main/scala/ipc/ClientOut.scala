@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 package ipc
 
 import shogi.format.{ FEN, Uci }
@@ -7,7 +7,7 @@ import shogi.{ Centis, Color, MoveMetrics, Pos }
 import play.api.libs.json._
 import scala.util.{ Success, Try }
 
-import lila.ws.util.LilaJsObject.augment
+import lishogi.ws.util.LishogiJsObject.augment
 
 sealed trait ClientOut extends ClientMsg
 

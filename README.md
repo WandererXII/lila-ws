@@ -1,7 +1,7 @@
 Handle incoming websocket traffic for [lishogi.org](https://lishogi.org).
 
 ```
-lila <-> redis <-> lila-ws <-> websocket <-> client
+lishogi <-> redis <-> lishogi-ws <-> websocket <-> client
 ```
 
 Start:

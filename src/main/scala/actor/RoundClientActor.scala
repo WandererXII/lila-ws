@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
@@ -115,23 +115,23 @@ object RoundClientActor {
           case ClientOut.RoundMove(uci, blur, lag, ackId) =>
             fullId foreach { fid =>
               clientIn(ClientIn.Ack(ackId))
-              lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
+              lishogiIn.round(LishogiIn.RoundMove(fid, uci, blur, lag))
             }
             Behaviors.same
 
           case ClientOut.RoundPlayerForward(payload) =>
             fullId foreach { fid =>
-              lilaIn.round(LilaIn.RoundPlayerDo(fid, payload))
+              lishogiIn.round(LishogiIn.RoundPlayerDo(fid, payload))
             }
             Behaviors.same
 
           case ClientOut.RoundFlag(color) =>
-            lilaIn.round(LilaIn.RoundFlag(gameId, color, state.player.map(_.id)))
+            lishogiIn.round(LishogiIn.RoundFlag(gameId, color, state.player.map(_.id)))
             Behaviors.same
 
           case ClientOut.RoundBye =>
             fullId foreach { fid =>
-              lilaIn.round(LilaIn.RoundBye(fid))
+              lishogiIn.round(LishogiIn.RoundBye(fid))
             }
             Behaviors.same
 
@@ -139,49 +139,49 @@ object RoundClientActor {
             state.player match {
               case None =>
                 req.userId foreach {
-                  lilaIn round LilaIn.WatcherChatSay(state.room.id, _, msg)
+                  lishogiIn round LishogiIn.WatcherChatSay(state.room.id, _, msg)
                 }
               case Some(p) =>
                 import Game.RoundExt._
-                def extMsg(id: String) = req.userId.map { LilaIn.ChatSay(RoomId(id), _, msg) }
+                def extMsg(id: String) = req.userId.map { LishogiIn.ChatSay(RoomId(id), _, msg) }
                 p.ext match {
                   case None =>
-                    lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.color), msg))
-                  case Some(Tour(id))  => extMsg(id) foreach lilaIn.tour
-                  case Some(Swiss(id)) => extMsg(id) foreach lilaIn.swiss
-                  case Some(Simul(id)) => extMsg(id) foreach lilaIn.simul
+                    lishogiIn.round(LishogiIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.color), msg))
+                  case Some(Tour(id))  => extMsg(id) foreach lishogiIn.tour
+                  case Some(Swiss(id)) => extMsg(id) foreach lishogiIn.swiss
+                  case Some(Simul(id)) => extMsg(id) foreach lishogiIn.simul
                 }
             }
             Behaviors.same
 
           case ClientOut.ChatTimeout(suspect, reason, text) =>
             deps.req.user foreach { u =>
-              def msg(id: String) = LilaIn.ChatTimeout(RoomId(id), u.id, suspect, reason, text)
+              def msg(id: String) = LishogiIn.ChatTimeout(RoomId(id), u.id, suspect, reason, text)
               state.player flatMap { p =>
-                p.tourId.map(msg).map(lilaIn.tour) orElse
-                  p.simulId.map(msg).map(lilaIn.simul)
-              } getOrElse lilaIn.round(msg(state.room.id.value))
+                p.tourId.map(msg).map(lishogiIn.tour) orElse
+                  p.simulId.map(msg).map(lishogiIn.simul)
+              } getOrElse lishogiIn.round(msg(state.room.id.value))
             }
             Behaviors.same
 
           case ClientOut.RoundBerserk(ackId) =>
             if (state.player.isDefined) req.user foreach { u =>
               clientIn(ClientIn.Ack(ackId))
-              lilaIn.round(LilaIn.RoundBerserk(gameId, u.id))
+              lishogiIn.round(LishogiIn.RoundBerserk(gameId, u.id))
             }
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>
             fullId zip req.ip foreach {
               case (fid, ip) =>
-                lilaIn.round(LilaIn.RoundHold(fid, ip, mean, sd))
+                lishogiIn.round(LishogiIn.RoundHold(fid, ip, mean, sd))
             }
             Behaviors.same
 
           case ClientOut.RoundSelfReport(name) =>
             fullId zip req.ip foreach {
               case (fid, ip) =>
-                lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user.map(_.id), name))
+                lishogiIn.round(LishogiIn.RoundSelfReport(fid, ip, req.user.map(_.id), name))
             }
             Behaviors.same
 

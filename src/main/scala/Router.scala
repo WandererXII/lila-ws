@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import scala.concurrent.Future
@@ -9,7 +9,7 @@ final class Router(controller: Controller) {
 
   def apply(req: RequestHeader, emit: ClientEmit): Controller.Response ={
     val path = req.path drop 1 split '/'
-    val rpath = if(path.head == "lila-ws") path.tail else path
+    val rpath = if(path.head == "lishogi-ws") path.tail else path
     rpath match {
       case Array("socket") | Array("socket", _) => controller.site(req, emit)
       case Array("analysis", "socket")          => controller.site(req, emit)

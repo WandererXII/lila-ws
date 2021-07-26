@@ -1,4 +1,4 @@
-package lila.ws.util
+package lishogi.ws.util
 
 import java.util.concurrent.ConcurrentHashMap
 

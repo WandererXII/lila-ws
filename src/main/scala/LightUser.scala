@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import reactivemongo.api.bson._

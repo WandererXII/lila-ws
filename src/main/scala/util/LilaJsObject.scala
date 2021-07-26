@@ -1,9 +1,9 @@
-package lila.ws
+package lishogi.ws
 package util
 
 import play.api.libs.json._
 
-final class LilaJsObject(private val js: JsObject) extends AnyVal {
+final class LishogiJsObject(private val js: JsObject) extends AnyVal {
 
   def str(key: String): Option[String] =
     (js \ key).asOpt[String]
@@ -28,7 +28,7 @@ final class LilaJsObject(private val js: JsObject) extends AnyVal {
     pair._2.fold(js) { a => js + (pair._1 -> Json.toJson(a)) }
 }
 
-object LilaJsObject {
+object LishogiJsObject {
 
-  implicit def augment(o: JsObject) = new LilaJsObject(o)
+  implicit def augment(o: JsObject) = new LishogiJsObject(o)
 }

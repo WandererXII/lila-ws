@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
@@ -29,8 +29,8 @@ object StudyClientActor {
         import deps._
 
         def forward(payload: JsValue): Unit =
-          lilaIn.study(
-            LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+          lishogiIn.study(
+            LishogiIn.TellRoomSri(state.room.id, LishogiIn.TellSri(req.sri, req.user.map(_.id), payload))
           )
 
         def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
@@ -81,7 +81,7 @@ object StudyClientActor {
 
         RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
           case (newState, emit) =>
-            emit foreach lilaIn.study
+            emit foreach lishogiIn.study
             newState.fold(Behaviors.same[ClientMsg]) { roomState =>
               apply(state.copy(room = roomState), deps)
             }

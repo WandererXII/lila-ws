@@ -1,4 +1,4 @@
-package lila.ws.util
+package lishogi.ws.util
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ ExecutionContext, Future }

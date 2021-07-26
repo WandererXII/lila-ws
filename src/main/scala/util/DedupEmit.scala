@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 package util
 
 import akka.actor.typed.Scheduler

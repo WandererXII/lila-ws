@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 package ipc
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
@@ -6,7 +6,7 @@ import play.api.libs.json._
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
-import lila.ws.util.LilaJsObject.augment
+import lishogi.ws.util.LishogiJsObject.augment
 
 final class CrowdJson(
     mongo: Mongo,

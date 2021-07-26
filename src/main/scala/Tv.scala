@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import scala.concurrent.duration._
@@ -15,7 +15,7 @@ object Tv {
     .expireAfterWrite(2.hours)
     .build[String, Boolean]
 
-  def select(out: LilaOut.TvSelect): Unit = {
+  def select(out: LishogiOut.TvSelect): Unit = {
     val cliMsg = ClientIn.tvSelect(out.json)
     List(fast, slow) foreach { in =>
       in.asMap.keys foreach { gameId =>

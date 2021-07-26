@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
@@ -37,7 +37,7 @@ object ChallengeClientActor {
             }
 
           case ClientCtrl.Disconnect =>
-            // lila tries to close the round room, because there's no game with that ID yet
+            // lishogi tries to close the round room, because there's no game with that ID yet
             // ignore it so we stay connected to the challenge
             Behaviors.same
 
@@ -67,7 +67,7 @@ object ChallengeClientActor {
 
         RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
           case (newState, emit) =>
-            emit foreach lilaIn.challenge.apply
+            emit foreach lishogiIn.challenge.apply
             newState.fold(Behaviors.same[ClientMsg]) { roomState =>
               apply(state.copy(room = roomState), deps)
             }

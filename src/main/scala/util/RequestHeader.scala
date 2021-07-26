@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 package util
 
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder

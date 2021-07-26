@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import shogi.Color
 import java.util.concurrent.ConcurrentHashMap
@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext
 import ipc._
 
 final class RoundCrowd(
-    lila: Lila,
+    lishogi: Lishogi,
     json: CrowdJson,
     groupedWithin: util.GroupedWithin
 )(implicit ec: ExecutionContext) {
@@ -62,7 +62,7 @@ final class RoundCrowd(
         case (crowds, crowd) => crowds.updated(crowd.room.roomId, crowd)
       }
       .values
-    lila.emit.round(LilaIn.RoundOnlines(aggregated))
+    lishogi.emit.round(LishogiIn.RoundOnlines(aggregated))
     aggregated foreach { output =>
       json round output foreach {
         Bus.publish(_ room output.room.roomId, _)

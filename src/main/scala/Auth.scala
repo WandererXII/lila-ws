@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import reactivemongo.api.bson._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -34,7 +34,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: 
         case None => Future successful None
       }
 
-  private val cookieName     = "lila2"
+  private val cookieName     = "lishogi2"
   private val sessionIdKey   = "sessionId"
   private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
   private val sidKey         = "sid"

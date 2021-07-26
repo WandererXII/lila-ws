@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
@@ -11,9 +11,9 @@ import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
 
 import ipc._
 
-final class Lila(config: Config)(implicit ec: ExecutionContext) {
+final class Lishogi(config: Config)(implicit ec: ExecutionContext) {
 
-  import Lila._
+  import Lishogi._
 
   object status {
     private var value: Status = Online
@@ -64,15 +64,15 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   )
 
   private def connectAll: Future[Emits] =
-    connect[LilaIn.Site](chans.site) zip
-      connect[LilaIn.Tour](chans.tour) zip
-      connect[LilaIn.Lobby](chans.lobby) zip
-      connect[LilaIn.Simul](chans.simul) zip
-      connect[LilaIn.Team](chans.team) zip
-      connect[LilaIn.Swiss](chans.swiss) zip
-      connect[LilaIn.Study](chans.study) zip
-      connect[LilaIn.Round](chans.round) zip
-      connect[LilaIn.Challenge](chans.challenge) map {
+    connect[LishogiIn.Site](chans.site) zip
+      connect[LishogiIn.Tour](chans.tour) zip
+      connect[LishogiIn.Lobby](chans.lobby) zip
+      connect[LishogIn.Simul](chans.simul) zip
+      connect[LishogiIn.Team](chans.team) zip
+      connect[LishogiIn.Swiss](chans.swiss) zip
+      connect[LishogiIn.Study](chans.study) zip
+      connect[LishogiIn.Round](chans.round) zip
+      connect[LishogiIn.Challenge](chans.challenge) map {
       case site ~ tour ~ lobby ~ simul ~ team ~ swiss ~ study ~ round ~ challenge =>
         new Emits(
           site,
@@ -87,7 +87,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
         )
     }
 
-  private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] = {
+  private def connect[In <: LishogiIn](chan: Chan): Future[Emit[In]] = {
 
     val emit: Emit[In] = in => {
       val msg  = in.write
@@ -106,7 +106,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
     val promise = Promise[Emit[In]]
 
     connOut.async.subscribe(chan.out) thenRun { () =>
-      connIn.async.publish(chan.in, LilaIn.WsBoot.write)
+      connIn.async.publish(chan.in, LishogiIn.WsBoot.write)
       promise success emit
     }
 
@@ -116,7 +116,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   connOut.addListener(new RedisPubSubAdapter[String, String] {
     override def message(chan: String, msg: String): Unit = {
       Monitor.redis.out(chan, msg.takeWhile(' '.!=))
-      LilaOut read msg match {
+      LishogiOut read msg match {
         case Some(out) => handlers(chan)(out)
         case None      => logger.warn(s"Can't parse $msg on $chan")
       }
@@ -129,13 +129,13 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   }
 }
 
-object Lila {
+object Lishog {
 
   sealed trait Status
   case object Online  extends Status
   case object Offline extends Status
 
-  type Handlers = String => Emit[LilaOut]
+  type Handlers = String => Emit[LishogiOut]
 
   sealed abstract class Chan(value: String) {
     val in  = s"$value-in"
@@ -155,15 +155,15 @@ object Lila {
   }
 
   final class Emits(
-      val site: Emit[LilaIn.Site],
-      val tour: Emit[LilaIn.Tour],
-      val lobby: Emit[LilaIn.Lobby],
-      val simul: Emit[LilaIn.Simul],
-      val team: Emit[LilaIn.Team],
-      val swiss: Emit[LilaIn.Swiss],
-      val study: Emit[LilaIn.Study],
-      val round: Emit[LilaIn.Round],
-      val challenge: Emit[LilaIn.Challenge]
+      val site: Emit[LishogiIn.Site],
+      val tour: Emit[LishogiIn.Tour],
+      val lobby: Emit[LishogiIn.Lobby],
+      val simul: Emit[LishogiIn.Simul],
+      val team: Emit[LishogiIn.Team],
+      val swiss: Emit[LishogiIn.Swiss],
+      val study: Emit[LishogiIn.Study],
+      val round: Emit[LishogiIn.Round],
+      val challenge: Emit[LishogiIn.Challenge]
   ) {
 
     def apply[In](select: Emits => Emit[In], in: In) = select(this)(in)

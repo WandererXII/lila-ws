@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 package netty
 
 import io.netty.channel._

@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import play.api.libs.json._
 

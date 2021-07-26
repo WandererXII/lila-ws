@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import scala.concurrent.duration._
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }

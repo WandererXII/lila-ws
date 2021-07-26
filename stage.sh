@@ -1,6 +1,6 @@
 #!/bin/sh
 
-APP=lila-ws-2.0
+APP=lishogi-ws-2.0
 
 package_dir="target/universal"
 package="$package_dir/$APP"

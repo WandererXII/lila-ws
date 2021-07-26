@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import shogi.Color
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }

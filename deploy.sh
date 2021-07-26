@@ -1,8 +1,8 @@
 #!/bin/sh
 
-APP=lila-ws-2.0
+APP=lishogi-ws-2.0
 REMOTE=$1
-REMOTE_DIR="/home/lila-ws"
+REMOTE_DIR="/home/lishogi-ws"
 stage="target/universal/stage"
 
 echo "Deploy $APP to server $REMOTE:$REMOTE_DIR"
@@ -35,8 +35,8 @@ echo "rsync complete"
 
 read -n 1 -p "Press [Enter] to continue."
 
-echo "Restart lila-ws"
-ssh $REMOTE "systemctl restart lila-ws"
+echo "Restart lishogi-ws"
+ssh $REMOTE "systemctl restart lishogi-ws"
 
 echo "Deploy complete"
 

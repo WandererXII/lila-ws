@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
@@ -16,13 +16,13 @@ object ClientActor {
   )
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
-    LilaWsServer.connections.incrementAndGet
+    LishogiWsServer.connections.incrementAndGet
     busChansOf(deps.req) foreach { Bus.subscribe(_, ctx.self) }
   }
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
-    LilaWsServer.connections.decrementAndGet
+    LishogiWsServer.connections.decrementAndGet
     if (state.watchedGames.nonEmpty) Fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
     req.user foreach { user =>
@@ -110,12 +110,12 @@ object ClientActor {
         state
 
       case ClientOut.SiteForward(payload) =>
-        lilaIn.site(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+        lishogiIn.site(LishogiIn.TellSri(req.sri, req.user.map(_.id), payload))
         state
 
       case ClientOut.UserForward(payload) =>
         req.user foreach { user =>
-          lilaIn.site(LilaIn.TellUser(user.id, payload))
+          lishogiIn.site(LishogiIn.TellUser(user.id, payload))
         }
         state
 
@@ -173,7 +173,7 @@ object ClientActor {
       req: Req,
       services: Services
   ) {
-    def lilaIn     = services.lila
+    def lishogiIn     = services.lishogi
     def users      = services.users
     def roomCrowd  = services.roomCrowd
     def roundCrowd = services.roundCrowd

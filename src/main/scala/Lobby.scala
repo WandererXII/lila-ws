@@ -1,22 +1,22 @@
-package lila.ws
+package lishogi.ws
 
 import scala.concurrent.duration._
 
 import ipc.ClientIn.LobbyPong
-import ipc.LilaIn
+import ipc.LishogiIn
 
 final class Lobby(
-    lila: Lila,
+    lishogi: Lishogi,
     groupedWithin: util.GroupedWithin
 ) {
 
-  private val lilaIn = lila.emit.lobby
+  private val lishogiIn = lishogi.emit.lobby
 
   val connect = groupedWithin[(Sri, Option[User.ID])](6, 479.millis) { connects =>
-    lilaIn(LilaIn.ConnectSris(connects))
+    lishogiIn(LishogiIn.ConnectSris(connects))
   }
 
-  val disconnect = groupedWithin[Sri](50, 487.millis) { sris => lilaIn(LilaIn.DisconnectSris(sris)) }
+  val disconnect = groupedWithin[Sri](50, 487.millis) { sris => lishogiIn(LishogiIn.DisconnectSris(sris)) }
 
   object pong {
 

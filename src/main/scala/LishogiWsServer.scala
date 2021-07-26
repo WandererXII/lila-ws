@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.{ ActorSystem, Scheduler }
 import com.softwaremill.macwire._
@@ -18,8 +18,8 @@ object Boot extends App {
   lazy val mongo         = wire[Mongo]
   lazy val groupedWithin = wire[util.GroupedWithin]
   lazy val lightUserApi  = wire[LightUserApi]
-  lazy val lilaRedis     = wire[Lila]
-  lazy val lilaHandlers  = wire[LilaHandler]
+  lazy val lishogiRedis     = wire[Lishogi]
+  lazy val lishogiHandlers  = wire[LishogiHandler]
   lazy val roundCrowd    = wire[RoundCrowd]
   lazy val roomCrowd     = wire[RoomCrowd]
   lazy val crowdJson     = wire[ipc.CrowdJson]
@@ -37,13 +37,13 @@ object Boot extends App {
   lazy val nettyServer   = wire[netty.NettyServer]
   lazy val monitor       = wire[Monitor]
 
-  wire[LilaWsServer].start
+  wire[LishogiWsServer].start
 }
 
-final class LilaWsServer(
+final class LishogiWsServer()
     nettyServer: netty.NettyServer,
-    handlers: LilaHandler, // must eagerly instanciate!
-    lila: Lila,
+    handlers: LishogiHandler, // must eagerly instanciate!
+    lishogi: Lishogi,
     monitor: Monitor,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
@@ -55,8 +55,8 @@ final class LilaWsServer(
     Bus.internal.subscribe(
       "users",
       {
-        case ipc.LilaIn.ConnectUser(_, true) => // don't send to lila
-        case msg: ipc.LilaIn.Site            => lila.emit.site(msg)
+        case ipc.LishogiIn.ConnectUser(_, true) => // don't send to lishogi
+        case msg: ipc.LishogiIn.Site            => lishogi.emit.site(msg)
       }
     )
 
@@ -68,7 +68,7 @@ final class LilaWsServer(
   }
 }
 
-object LilaWsServer {
+object LishogiWsServer {}
 
   val connections = new java.util.concurrent.atomic.AtomicInteger
 }

@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 package netty
 
 import com.typesafe.scalalogging.Logger

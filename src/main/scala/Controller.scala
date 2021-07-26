@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
@@ -219,13 +219,13 @@ final class Controller(
       "capacitor://localhost", // capacitor (ios next)
       "http://localhost",      // android
       "http://localhost:8080", // local dev
-      "http://localhost:9663", // lila dev
-      "http://localhost:9000", // lila dev
+      "http://localhost:9663", // lishogi dev
+      "http://localhost:9000", // lishogi dev
       "http://socket1.lishogi.org",
       "http://lishogi.org",
       "https://socket1.lishogi.org",
       "https://lishogi.org",
-      "http://l.org",          // lila dev
+      "http://l.org",          // lishogi dev
       "file://"
     )
 

@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
@@ -24,7 +24,7 @@ final class Monitor(
     val useEpoll = config.getBoolean("netty.useEpoll")
     val useKamon = config.getString("kamon.influxdb.hostname").nonEmpty
 
-    logger.info(s"lila-ws netty epoll=$useEpoll kamon=$useKamon")
+    logger.info(s"lishogi-ws netty epoll=$useEpoll kamon=$useKamon")
     logger.info(s"Java version: $version, memory: ${memory}MB")
 
     if (useKamon) kamon.Kamon.loadModules()
@@ -34,7 +34,7 @@ final class Monitor(
 
   private def periodicMetrics = {
 
-    val members = LilaWsServer.connections.get
+    val members = LishogiWsServer.connections.get
     val rounds  = services.roundCrowd.size
     services.lobby.pong.update(members, rounds)
 

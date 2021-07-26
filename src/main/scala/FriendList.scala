@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import scala.concurrent.duration._
@@ -78,8 +78,8 @@ final class FriendList(
   Bus.internal.subscribe(
     "users",
     {
-      case ipc.LilaIn.ConnectUser(user, _)   => onConnect(user.id)
-      case ipc.LilaIn.DisconnectUsers(users) => users foreach onDisconnect
+      case ipc.LishogiIn.ConnectUser(user, _)   => onConnect(user.id)
+      case ipc.LishogiIn.DisconnectUsers(users) => users foreach onDisconnect
     }
   )
 }

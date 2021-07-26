@@ -1,11 +1,11 @@
-package lila.ws
+package lishogi.ws
 
 import scala.concurrent.duration._
 
-import ipc.LilaIn
+import ipc.LishogiIn
 
 final class Services(
-    lilaRedis: Lila,
+    lishogiRedis: Lishogi,
     groupedWithin: util.GroupedWithin,
     val users: Users,
     val roomCrowd: RoomCrowd,
@@ -16,15 +16,15 @@ final class Services(
     val stormSign: StormSign
 ) {
 
-  def lila = lilaRedis.emit
+  def lishogi = lishogiRedis.emit
 
   val lag = groupedWithin[(User.ID, Int)](128, 947.millis) { lags =>
-    lila.site(LilaIn.Lags(lags.toMap))
+    lishogi.site(LishogiIn.Lags(lags.toMap))
   }
   val notified = groupedWithin[User.ID](40, 1001.millis) { userIds =>
-    lila.site(LilaIn.NotifiedBatch(userIds))
+    lishogi.site(LishogiIn.NotifiedBatch(userIds))
   }
   val challengePing = groupedWithin[RoomId](20, 2.seconds) { ids =>
-    lila.challenge(LilaIn.ChallengePings(ids.distinct))
+    lishogi.challenge(LishogiIn.ChallengePings(ids.distinct))
   }
 }

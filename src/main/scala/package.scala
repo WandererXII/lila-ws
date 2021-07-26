@@ -1,4 +1,4 @@
-package lila
+package lishogi
 
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 

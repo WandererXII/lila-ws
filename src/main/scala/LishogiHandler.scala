@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
@@ -6,8 +6,8 @@ import scala.concurrent.{ ExecutionContext, Promise }
 
 import ipc._
 
-final class LilaHandler(
-    lila: Lila,
+final class LishogiHandler()
+    lishogi: Lishogi,
     users: Users,
     friendList: FriendList,
     roomCrowd: RoomCrowd,
@@ -17,12 +17,12 @@ final class LilaHandler(
     services: Services
 )(implicit ec: ExecutionContext) {
 
-  import LilaOut._
+  import LishogiOut._
   import Bus.publish
 
   private val logger = Logger(getClass)
 
-  private val siteHandler: Emit[LilaOut] = {
+  private val siteHandler: Emit[LishogiOut] = {
 
     case Mlat(millis)            => publish(_.mlat, ClientIn.Mlat(millis))
     case TellFlag(flag, payload) => publish(_ flag flag, ClientIn.Payload(payload))
@@ -45,21 +45,21 @@ final class LilaHandler(
     case ApiUserOnline(user, true) =>
       clients ! Clients.Start(
         ApiActor start ApiActor.Deps(User(user), services),
-        Promise[_root_.lila.ws.Client]
+        Promise[_root_.lishogi.ws.Client]
       )
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
 
     case Impersonate(user, by) => Impersonations(user, by)
 
-    case LilaStop(reqId) =>
-      logger.info("******************** LILA STOP ********************")
-      lila.emit.site(LilaIn.ReqResponse(reqId, "See you on the other side"))
-      lila.status.setOffline()
+    case LishogiStop(reqId) =>
+      logger.info("******************** LISHOGI STOP ********************")
+      lishogi.emit.site(LishogiIn.ReqResponse(reqId, "See you on the other side"))
+      lishogi.status.setOffline()
 
     case msg => logger.warn(s"Unhandled site: $msg")
   }
 
-  private val lobbyHandler: Emit[LilaOut] = {
+  private val lobbyHandler: Emit[LishogiOut] = {
 
     case TellLobbyUsers(us, json) =>
       users.tellMany(us, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
@@ -78,47 +78,47 @@ final class LilaHandler(
     case msg           => logger.warn(s"Unhandled lobby: $msg")
   }
 
-  private val simulHandler: Emit[LilaOut] = {
-    case LilaBoot => roomBoot(_.idFilter.simul, lila.emit.simul)
+  private val simulHandler: Emit[LishogiOut] = {}
+    case LishogiBoot => roomBoot(_.idFilter.simul, lishogi.emit.simul)
     case msg      => roomHandler(msg)
   }
 
-  private val teamHandler: Emit[LilaOut] = {
-    case LilaBoot => roomBoot(_.idFilter.team, lila.emit.team)
+  private val teamHandler: Emit[LishogiOut] = {}
+    case LishogiBoot => roomBoot(_.idFilter.team, lishogi.emit.team)
     case msg      => roomHandler(msg)
   }
 
-  private val swissHandler: Emit[LilaOut] = {
-    case LilaBoot => roomBoot(_.idFilter.swiss, lila.emit.swiss)
+  private val swissHandler: Emit[LishogiOut] = {}
+    case LishogiBoot => roomBoot(_.idFilter.swiss, lishogi.emit.swiss)
     case msg      => roomHandler(msg)
   }
 
-  private val tourHandler: Emit[LilaOut] = {
+  private val tourHandler: Emit[LishogiOut] = {}
     case GetWaitingUsers(roomId, name) =>
       mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
         case (active, playing) =>
           val present   = roomCrowd getUsers roomId
           val standby   = active diff playing
           val allAbsent = standby diff present
-          lila.emit.tour(LilaIn.WaitingUsers(roomId, name, present, standby))
+          lishogi.emit.tour(LishogiIn.WaitingUsers(roomId, name, present, standby))
           val absent = {
             if (allAbsent.size > 100) scala.util.Random.shuffle(allAbsent) take 80
             else allAbsent
           }.toSet
           if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
       }
-    case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
+    case LishogiBoot => roomBoot(_.idFilter.tour, lishogi.emit.tour)
     case msg      => roomHandler(msg)
   }
 
-  private val studyHandler: Emit[LilaOut] = {
-    case LilaOut.RoomIsPresent(reqId, roomId, userId) =>
-      lila.emit.study(LilaIn.ReqResponse(reqId, roomCrowd.isPresent(roomId, userId).toString))
-    case LilaBoot => roomBoot(_.idFilter.study, lila.emit.study)
+  private val studyHandler: Emit[LishogiOut] = {}
+    case LishogiOut.RoomIsPresent(reqId, roomId, userId) =>
+      lishogi.emit.study(LishogiIn.ReqResponse(reqId, roomCrowd.isPresent(roomId, userId).toString))
+    case LishogiBoot => roomBoot(_.idFilter.study, lishogi.emit.study)
     case msg      => roomHandler(msg)
   }
 
-  private val roundHandler: Emit[LilaOut] = {
+  private val roundHandler: Emit[LishogiOut] = {}
     implicit def gameRoomId(gameId: Game.Id): RoomId = RoomId(gameId)
     implicit def roomGameId(roomId: RoomId): Game.Id = Game.Id(roomId.value)
     ({
@@ -147,17 +147,17 @@ final class LilaHandler(
           publish(_ userTv u, ClientIn.Resync)
         }
       case GameFinish(users) => users foreach friendList.stopPlaying
-      case LilaBoot =>
-        logger.info("#################### LILA BOOT ####################")
-        lila.status.setOnline { () =>
-          lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
+      case LishogiBoot =>
+        logger.info("#################### LISHOGI BOOT ####################")
+        lishogi.status.setOnline { () =>
+          lishogi.emit.round(LishogiIn.RoomSetVersions(History.round.allVersions))
         }
         Impersonations.reset()
       case msg => roomHandler(msg)
     })
   }
 
-  private val roomHandler: Emit[LilaOut] = {
+  private val roomHandler: Emit[LishogiOut] = {}
     def tellVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, payload: JsonString) = {
       val versioned = ClientIn.Versioned(payload, version, troll)
       History.room.add(roomId, versioned)
@@ -179,24 +179,24 @@ final class LilaHandler(
 
   private def roomBoot(
       filter: Mongo => Mongo.IdFilter,
-      lilaIn: Emit[LilaIn.RoomSetVersions]
-  ): Unit = {
+      lishogiIn: Emit[LishogiIn.RoomSetVersions]
+  ): Unit = {}
     val versions = History.room.allVersions
     filter(mongo)(versions.map(_._1)) foreach { ids =>
-      lilaIn(LilaIn.RoomSetVersions(versions.filter(v => ids(v._1))))
+      lishogiIn(LishogiIn.RoomSetVersions(versions.filter(v => ids(v._1))))
     }
   }
 
-  lila.setHandlers({
-    case Lila.chans.round.out     => roundHandler
-    case Lila.chans.site.out      => siteHandler
-    case Lila.chans.lobby.out     => lobbyHandler
-    case Lila.chans.tour.out      => tourHandler
-    case Lila.chans.swiss.out     => swissHandler
-    case Lila.chans.simul.out     => simulHandler
-    case Lila.chans.study.out     => studyHandler
-    case Lila.chans.team.out      => teamHandler
-    case Lila.chans.challenge.out => roomHandler
+  lishogi.setHandlers({
+    case Lishogi.chans.round.out     => roundHandler
+    case Lishogi.chans.site.out      => siteHandler
+    case Lishogi.chans.lobby.out     => lobbyHandler
+    case Lishogi.chans.tour.out      => tourHandler
+    case Lishogi.chans.swiss.out     => swissHandler
+    case Lishogi.chans.simul.out     => simulHandler
+    case Lishogi.chans.study.out     => studyHandler
+    case Lishogi.chans.team.out      => teamHandler
+    case Lishogi.chans.challenge.out => roomHandler
     case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
   })
 }

@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.{ Behavior, PostStop }
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
@@ -10,13 +10,13 @@ object ApiActor {
   def start(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
       deps.services.users.connect(deps.user, ctx.self)
-      LilaWsServer.connections.incrementAndGet
+      LishogiWsServer.connections.incrementAndGet
       apply(deps)
     }
 
   def onStop(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
-    LilaWsServer.connections.decrementAndGet
+    LishogiWsServer.connections.decrementAndGet
     services.users.disconnect(user, ctx.self)
     services.friends.onClientStop(user.id)
   }

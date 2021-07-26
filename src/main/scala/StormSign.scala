@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import com.roundeights.hasher.Algo
 import com.typesafe.config.Config

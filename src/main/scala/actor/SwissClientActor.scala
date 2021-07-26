@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
@@ -57,7 +57,7 @@ object SwissClientActor {
 
         RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
           case (newState, emit) =>
-            emit foreach lilaIn.swiss
+            emit foreach lishogiIn.swiss
             newState.fold(Behaviors.same[ClientMsg]) { roomState =>
               apply(state.copy(room = roomState), deps)
             }

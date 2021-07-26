@@ -16,7 +16,7 @@ libraryDependencies ++= List(
 )
 
 resolvers ++= Seq(
-  "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master",
+  "lishogi-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master",
   "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases"
 )
 

@@ -1,13 +1,13 @@
-package lila.ws
+package lishogi.ws
 package ipc
 
 import shogi.Color
 
-sealed trait LilaOut
+sealed trait LishogiOut
 
-sealed trait SiteOut      extends LilaOut
-sealed trait LobbyOut     extends LilaOut
-sealed trait RoomOut      extends LilaOut
+sealed trait SiteOut      extends LishogiOut
+sealed trait LobbyOut     extends LishogiOut
+sealed trait RoomOut      extends LishogiOut
 sealed trait SimulOut     extends RoomOut
 sealed trait TourOut      extends RoomOut
 sealed trait StudyOut     extends RoomOut
@@ -16,7 +16,7 @@ sealed trait ChallengeOut extends RoomOut
 
 sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut with ChallengeOut
 
-object LilaOut {
+object LishogiOut {
 
   // site
 
@@ -91,17 +91,17 @@ object LilaOut {
   case class TvSelect(gameId: Game.Id, speed: shogi.Speed, json: JsonString) extends RoundOut
 
   case class ApiUserOnline(userId: User.ID, online: Boolean) extends AnyRoomOut
-  case object LilaBoot                                       extends AnyRoomOut
-  case class LilaStop(reqId: Int)                            extends AnyRoomOut
+  case object LishogiBoot                                       extends AnyRoomOut
+  case class LishogiStop(reqId: Int)                            extends AnyRoomOut
 
   // impl
 
   private def get(args: String, nb: Int)(
-      f: PartialFunction[Array[String], Option[LilaOut]]
-  ): Option[LilaOut] =
+      f: PartialFunction[Array[String], Option[LishogiOut]]
+  ): Option[LishogiOut] =
     f.applyOrElse(args.split(" ", nb), (_: Array[String]) => None)
 
-  def read(str: String): Option[LilaOut] = {
+  def read(str: String): Option[LishogiOut] = {}
     val parts = str.split(" ", 2)
     val args  = parts.lift(1) getOrElse ""
     parts(0) match {
@@ -299,9 +299,9 @@ object LilaOut {
           case Array(userId, online) => Some(ApiUserOnline(userId, boolean(online)))
         }
 
-      case "boot" => Some(LilaBoot)
+      case "boot" => Some(LishogiBoot)
 
-      case "lila/stop" => args.toIntOption map LilaStop.apply
+      case "lishogi/stop" => args.toIntOption map LishogiStop.apply
 
       case _ => None
     }

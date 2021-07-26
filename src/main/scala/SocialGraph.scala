@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import com.typesafe.config.Config
 import java.util.TreeSet

@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
@@ -31,7 +31,7 @@ object LobbyClientActor {
         import deps._
 
         def forward(payload: JsValue): Unit =
-          lilaIn.lobby(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+          lishogiIn.lobby(LishogiIn.TellSri(req.sri, req.user.map(_.id), payload))
 
         msg match {
 

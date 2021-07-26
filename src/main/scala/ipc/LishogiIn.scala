@@ -1,22 +1,22 @@
-package lila.ws
+package lishogi.ws
 package ipc
 
 import shogi.format.Uci
 import shogi.{ Centis, Color, MoveMetrics }
 import play.api.libs.json._
 
-sealed trait LilaIn {
+sealed trait LishogiIn {
   def write: String
-  def critical: Boolean = false // will be buffered and resent after lila reboots
+  def critical: Boolean = false // will be buffered and resent after lishogi reboots
 }
 
-object LilaIn {
+object LishogiIn {
 
-  sealed trait Site extends LilaIn
+  sealed trait Site extends LishogiIn
 
-  sealed trait Lobby extends LilaIn
+  sealed trait Lobby extends LishogiIn
 
-  sealed trait Room      extends LilaIn
+  sealed trait Room      extends LishogiIn
   sealed trait Simul     extends Room
   sealed trait Team      extends Room
   sealed trait Swiss     extends Room

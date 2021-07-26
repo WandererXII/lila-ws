@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.scaladsl.ActorContext
 
@@ -43,7 +43,7 @@ object RoomActor {
   def receive(
       state: State,
       deps: Deps
-  ): PartialFunction[ClientMsg, (Option[State], Option[LilaIn.AnyRoom])] = {
+  ): PartialFunction[ClientMsg, (Option[State], Option[LishogiIn.AnyRoom])] = {
 
     case versioned: ClientIn.Versioned =>
       deps.clientIn(versionFor(state.isTroll, versioned))
@@ -65,9 +65,9 @@ object RoomActor {
       Some(state.copy(isTroll = v)) -> None
 
     case ClientOut.ChatSay(msg) =>
-      None -> deps.req.user.map { u => LilaIn.ChatSay(state.id, u.id, msg) }
+      None -> deps.req.user.map { u => LishogiIn.ChatSay(state.id, u.id, msg) }
 
     case ClientOut.ChatTimeout(suspect, reason, text) =>
-      None -> deps.req.user.map { u => LilaIn.ChatTimeout(state.id, u.id, suspect, reason, text) }
+      None -> deps.req.user.map { u => LishogiIn.ChatTimeout(state.id, u.id, suspect, reason, text) }
   }
 }

@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import akka.actor.typed.Scheduler
 import java.util.concurrent.ConcurrentHashMap
@@ -16,7 +16,7 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
   private def publish(msg: Any) = Bus.internal.publish("users", msg)
 
   scheduler.scheduleWithFixedDelay(7.seconds, 5.seconds) { () =>
-    publish(LilaIn.DisconnectUsers(disconnects.iterator.asScala.toSet))
+    publish(LishogiIn.DisconnectUsers(disconnects.iterator.asScala.toSet))
     disconnects.clear()
   }
 
@@ -25,7 +25,7 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
       user.id,
       {
         case (_, null) =>
-          if (!disconnects.remove(user.id)) publish(LilaIn.ConnectUser(user, silently))
+          if (!disconnects.remove(user.id)) publish(LishogiIn.ConnectUser(user, silently))
           Set(client)
         case (_, clients) =>
           clients + client

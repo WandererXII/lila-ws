@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 package ipc
 
 import shogi.{ Hand, Hands }
@@ -7,7 +7,7 @@ import shogi.opening.FullOpening
 import shogi.variant.Standard
 import play.api.libs.json._
 
-import lila.ws.util.LilaJsObject.augment
+import lishogi.ws.util.LishogiJsObject.augment
 
 sealed trait ClientIn extends ClientMsg {
   def write: String

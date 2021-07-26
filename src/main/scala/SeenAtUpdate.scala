@@ -1,4 +1,4 @@
-package lila.ws
+package lishogi.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import org.joda.time.DateTime
