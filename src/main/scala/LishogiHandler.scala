@@ -6,7 +6,7 @@ import scala.concurrent.{ ExecutionContext, Promise }
 
 import ipc._
 
-final class LishogiHandler()
+final class LishogiHandler(
     lishogi: Lishogi,
     users: Users,
     friendList: FriendList,
@@ -78,22 +78,22 @@ final class LishogiHandler()
     case msg           => logger.warn(s"Unhandled lobby: $msg")
   }
 
-  private val simulHandler: Emit[LishogiOut] = {}
+  private val simulHandler: Emit[LishogiOut] = {
     case LishogiBoot => roomBoot(_.idFilter.simul, lishogi.emit.simul)
     case msg      => roomHandler(msg)
   }
 
-  private val teamHandler: Emit[LishogiOut] = {}
+  private val teamHandler: Emit[LishogiOut] = {
     case LishogiBoot => roomBoot(_.idFilter.team, lishogi.emit.team)
     case msg      => roomHandler(msg)
   }
 
-  private val swissHandler: Emit[LishogiOut] = {}
+  private val swissHandler: Emit[LishogiOut] = {
     case LishogiBoot => roomBoot(_.idFilter.swiss, lishogi.emit.swiss)
     case msg      => roomHandler(msg)
   }
 
-  private val tourHandler: Emit[LishogiOut] = {}
+  private val tourHandler: Emit[LishogiOut] = {
     case GetWaitingUsers(roomId, name) =>
       mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
         case (active, playing) =>
@@ -111,14 +111,14 @@ final class LishogiHandler()
     case msg      => roomHandler(msg)
   }
 
-  private val studyHandler: Emit[LishogiOut] = {}
+  private val studyHandler: Emit[LishogiOut] = {
     case LishogiOut.RoomIsPresent(reqId, roomId, userId) =>
       lishogi.emit.study(LishogiIn.ReqResponse(reqId, roomCrowd.isPresent(roomId, userId).toString))
     case LishogiBoot => roomBoot(_.idFilter.study, lishogi.emit.study)
     case msg      => roomHandler(msg)
   }
 
-  private val roundHandler: Emit[LishogiOut] = {}
+  private val roundHandler: Emit[LishogiOut] = {
     implicit def gameRoomId(gameId: Game.Id): RoomId = RoomId(gameId)
     implicit def roomGameId(roomId: RoomId): Game.Id = Game.Id(roomId.value)
     ({
@@ -157,7 +157,7 @@ final class LishogiHandler()
     })
   }
 
-  private val roomHandler: Emit[LishogiOut] = {}
+  private val roomHandler: Emit[LishogiOut] = {
     def tellVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, payload: JsonString) = {
       val versioned = ClientIn.Versioned(payload, version, troll)
       History.room.add(roomId, versioned)
@@ -180,7 +180,7 @@ final class LishogiHandler()
   private def roomBoot(
       filter: Mongo => Mongo.IdFilter,
       lishogiIn: Emit[LishogiIn.RoomSetVersions]
-  ): Unit = {}
+  ): Unit = {
     val versions = History.room.allVersions
     filter(mongo)(versions.map(_._1)) foreach { ids =>
       lishogiIn(LishogiIn.RoomSetVersions(versions.filter(v => ids(v._1))))
