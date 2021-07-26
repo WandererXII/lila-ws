@@ -101,7 +101,7 @@ object LishogiOut {
   ): Option[LishogiOut] =
     f.applyOrElse(args.split(" ", nb), (_: Array[String]) => None)
 
-  def read(str: String): Option[LishogiOut] = {}
+  def read(str: String): Option[LishogiOut] = {
     val parts = str.split(" ", 2)
     val args  = parts.lift(1) getOrElse ""
     parts(0) match {

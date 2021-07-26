@@ -40,7 +40,7 @@ object Boot extends App {
   wire[LishogiWsServer].start
 }
 
-final class LishogiWsServer()
+final class LishogiWsServer(
     nettyServer: netty.NettyServer,
     handlers: LishogiHandler, // must eagerly instanciate!
     lishogi: Lishogi,
@@ -68,7 +68,7 @@ final class LishogiWsServer()
   }
 }
 
-object LishogiWsServer {}
+object LishogiWsServer {
 
   val connections = new java.util.concurrent.atomic.AtomicInteger
 }
