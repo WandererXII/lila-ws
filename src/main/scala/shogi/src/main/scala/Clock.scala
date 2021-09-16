@@ -295,20 +295,28 @@ object Clock {
     }
   }
 
-  // [TimeControl "600+2"] -> 10+2
-  def readPgnConfig(str: String): Option[Config] =
-    str.split('+') match {
-      case Array(initStr, incStr) =>
+  def parseJPTime(str: String): Option[Int] = {
+    if (str contains "時間")
+      parseIntOption(str.takeWhile(_ != '時'))
+        .map(_ * 3600 + parseJPTime(str.reverse.takeWhile(_ != '間').reverse).getOrElse(0))
+    else if (str contains "分")
+      parseIntOption(str.takeWhile(_ != '分'))
+        .map(_ * 60 + parseJPTime(str.reverse.takeWhile(_ != '分').reverse).getOrElse(0))
+    else parseIntOption(str.filterNot(_ == '秒'))
+  }
+
+  val kifTime = """(?:\d+(?:秒|分|時間)?)+"""
+  lazy val KifClkRegex = raw"""($kifTime)(?:[\+|\|]($kifTime))?(?:\((\d)\))?(?:[\+|\|]($kifTime))?""".r
+
+  // 持ち時間: 10分|20秒(1)+10 -> 600 init, 10inc, 20 byo, 1 per
+  def readKifConfig(str: String): Option[Config] =
+    str match {
+      case KifClkRegex(initStr, byoStr, perStr, incStr) =>
         for {
-          init <- parseIntOption(initStr)
-          inc  <- parseIntOption(incStr)
-        } yield Config(init, inc, 0, 0)
-      case Array(initStr, incStr, byoStr, perStr) =>
-        for {
-          init <- parseIntOption(initStr)
-          inc  <- parseIntOption(incStr)
-          byo  <- parseIntOption(byoStr)
-          per  <- parseIntOption(perStr)
+          init <- parseJPTime(initStr)
+          byo  <- if (byoStr == null) Some(0) else parseJPTime(byoStr)
+          per  <- if (perStr == null) Some(1) else parseIntOption(perStr)
+          inc  <- if (incStr == null) Some(0) else parseJPTime(incStr)
         } yield Config(init, inc, byo, per)
       case _ => none
     }

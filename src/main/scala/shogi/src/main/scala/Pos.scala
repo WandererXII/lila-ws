@@ -43,6 +43,7 @@ sealed case class Pos private (x: Int, y: Int, piotr: Char) {
   val file     = Pos xToString x
   val rank     = y.toString
   val key      = file + rank
+  val usiKey   = (10 - x).toString + (96 + 10 - y).toChar.toString
   val color    = Color((x % 2 == 0) ^ (y % 2 == 0))
   val piotrStr = piotr.toString
 
@@ -180,4 +181,8 @@ object Pos {
       pos.piotr -> pos
     }
     .to(Map)
+
+  val numberAllKeys = Pos.allKeys map { case (_, v) => ((10 - v.x).toString + (10 - v.y)) -> v }
+  val usiAllKeys = Pos.allKeys map { case (_, v) => ((10 - v.x).toString + (10 - v.y + 96).toChar) -> v }
+  
 }
