@@ -214,7 +214,7 @@ object ClientOut {
                 reason <- data str "reason"
                 text   <- data str "text"
               } yield ChatTimeout(userId, reason, text)
-            case "ping"      => Some(ChallengePing)
+            case "ping" => Some(ChallengePing)
             // storm
             case "sk1" =>
               o str "d" flatMap { s =>
@@ -238,8 +238,8 @@ object ClientOut {
     for {
       orig <- d str "from"
       dest <- d str "to"
-      prom = (d \ "promotion").as[Boolean]
-      umoves = orig + dest + {if(prom) "+" else ""}
+      prom   = (d \ "promotion").as[Boolean]
+      umoves = orig + dest + { if (prom) "+" else "" }
       move <- Uci.Move(umoves)
     } yield move
 

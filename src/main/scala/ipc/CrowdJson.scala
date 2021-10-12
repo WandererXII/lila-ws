@@ -6,8 +6,6 @@ import play.api.libs.json._
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
-import lila.ws.util.LilaJsObject.augment
-
 final class CrowdJson(
     mongo: Mongo,
     lightUserApi: LightUserApi
@@ -29,10 +27,10 @@ final class CrowdJson(
       ClientIn.Crowd(
         Json
           .obj(
-            "sente" -> (crowd.players.sente > 0),
-            "gote"  -> (crowd.players.gote > 0)
+            "sente"    -> (crowd.players.sente > 0),
+            "gote"     -> (crowd.players.gote > 0),
+            "watchers" -> spectators
           )
-          .add("watchers" -> (if (crowd.room.users.nonEmpty) Some(spectators) else None))
       )
     }
 

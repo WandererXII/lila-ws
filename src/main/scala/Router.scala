@@ -7,9 +7,9 @@ import util.RequestHeader
 
 final class Router(controller: Controller) {
 
-  def apply(req: RequestHeader, emit: ClientEmit): Controller.Response ={
-    val path = req.path drop 1 split '/'
-    val rpath = if(path.head == "lila-ws") path.tail else path
+  def apply(req: RequestHeader, emit: ClientEmit): Controller.Response = {
+    val path  = req.path drop 1 split '/'
+    val rpath = if (path.head == "lila-ws") path.tail else path
     rpath match {
       case Array("socket") | Array("socket", _) => controller.site(req, emit)
       case Array("analysis", "socket")          => controller.site(req, emit)
@@ -27,5 +27,5 @@ final class Router(controller: Controller) {
       case Array("swiss", id)                   => controller.swiss(id, req, emit)
       case _                                    => Future successful Left(HttpResponseStatus.NOT_FOUND)
     }
-    }
+  }
 }

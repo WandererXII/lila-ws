@@ -14,7 +14,7 @@ import scala.util.{ Success, Try }
 
 final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
-  private val driver     = new AsyncDriver(Some(config.getConfig("reactivemongo")))
+  private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
   private val mainConnection =
     MongoConnection.fromString(config.getString("mongo.uri")) flatMap { parsedUri =>
@@ -32,7 +32,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   private def studyDb: Future[DB] =
     studyConnection flatMap { case (conn, dbName) =>
       conn database dbName.getOrElse("lishogi")
-  }
+    }
 
   private def collNamed(name: String) = mainDb.map(_ collection name)(parasitic)
   def securityColl                    = collNamed("security")

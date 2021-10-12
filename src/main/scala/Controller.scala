@@ -204,12 +204,12 @@ final class Controller(
     }
   }
 
-  private def ValidSri(req: RequestHeader)(f: Sri => Response): Response ={
+  private def ValidSri(req: RequestHeader)(f: Sri => Response): Response = {
     req.sri match {
       case Some(validSri) => f(validSri)
       case None           => Future successful Left(HttpResponseStatus.BAD_REQUEST) // f(Sri.random)
     }
-    }
+  }
 
   private object CSRF {
 
@@ -225,11 +225,11 @@ final class Controller(
       "http://lishogi.org",
       "https://socket1.lishogi.org",
       "https://lishogi.org",
-      "http://l.org",          // lila dev
+      "http://l.org", // lila dev
       "file://"
     )
 
-    def check(req: RequestHeader)(f: => Response): Response ={
+    def check(req: RequestHeader)(f: => Response): Response = {
       req.origin match {
         case None                                                       => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
@@ -237,7 +237,7 @@ final class Controller(
           logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
           Future successful Left(HttpResponseStatus.FORBIDDEN)
       }
-  }
+    }
   }
 
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)

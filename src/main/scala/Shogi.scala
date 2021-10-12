@@ -4,10 +4,8 @@ import play.api.libs.json._
 
 import shogi.format.{ FEN, Uci, UciCharPair }
 import shogi.opening.{ FullOpening, FullOpeningDB }
-import shogi.Pos
-import shogi.Role
-import shogi.{Hand, Hands}
-import shogi.variant.{ Standard, Variant }
+import shogi.{ Hand, Hands, Pos }
+import shogi.variant.Variant
 import com.typesafe.scalalogging.Logger
 
 import ipc._
@@ -126,26 +124,25 @@ object Shogi {
     def destString(dests: Map[Pos, List[Pos]]): String = {
       val sb    = new java.lang.StringBuilder(80)
       var first = true
-      dests foreach {
-        case (orig, dests) =>
-          if (first) first = false
-          else sb append " "
-          sb append orig.piotr
-          dests foreach { sb append _.piotr }
+      dests foreach { case (orig, dests) =>
+        if (first) first = false
+        else sb append " "
+        sb append orig.piotr
+        dests foreach { sb append _.piotr }
       }
       sb.toString
     }
 
-  implicit val crazyhousePocketWriter: OWrites[Hand] = OWrites { h =>
-    JsObject(
-      h.roleMap.filter(kv => 0 < kv._2).map { kv =>
-        kv._1.name -> JsNumber(kv._2)
-      }
-    )
-  }
+    implicit val crazyhousePocketWriter: OWrites[Hand] = OWrites { h =>
+      JsObject(
+        h.roleMap.filter(kv => 0 < kv._2).map { kv =>
+          kv._1.name -> JsNumber(kv._2)
+        }
+      )
+    }
 
-  implicit val crazyhouseDataWriter: OWrites[Hands] = OWrites { v => 
-    Json.obj("pockets" -> List(v.sente, v.gote))
+    implicit val crazyhouseDataWriter: OWrites[Hands] = OWrites { v =>
+      Json.obj("pockets" -> List(v.sente, v.gote))
     }
   }
 }

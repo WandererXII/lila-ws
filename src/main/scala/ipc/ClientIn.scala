@@ -1,10 +1,9 @@
 package lila.ws
 package ipc
 
-import shogi.{ Hand, Hands }
+import shogi.Hands
 import shogi.format.{ FEN, Uci, UciCharPair }
 import shogi.opening.FullOpening
-import shogi.variant.Standard
 import play.api.libs.json._
 
 import lila.ws.util.LilaJsObject.augment
@@ -45,7 +44,7 @@ object ClientIn {
         Json.obj(
           "id"  -> gameId.value,
           "lm"  -> lastUci,
-          "fen" -> fen,
+          "fen" -> fen
         )
       )
   }
@@ -234,11 +233,10 @@ object ClientIn {
     case class Onlines(users: List[FriendList.UserView]) extends ClientIn {
       def write =
         Json stringify Json.obj(
-          "t"        -> "following_onlines",
-          "d"        -> users.map(_.data.titleName),
-          "playing"  -> users.collect { case u if u.meta.playing => u.id },
-          "studying" -> Json.arr(),
-          "patrons"  -> users.collect { case u if u.data.patron => u.id }
+          "t"       -> "following_onlines",
+          "d"       -> users.map(_.data.titleName),
+          "playing" -> users.collect { case u if u.meta.playing => u.id },
+          "patrons" -> users.collect { case u if u.data.patron => u.id }
         )
     }
     case class Enters(user: FriendList.UserView) extends ClientIn {

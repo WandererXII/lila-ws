@@ -25,8 +25,8 @@ object Fens {
             case (_, Watched(pos, clients)) => Watched(pos, clients + client)
           }
         )
-        .position foreach {
-        case Position(lastUci, fen) => client ! ClientIn.Fen(gameId, lastUci, fen)
+        .position foreach { case Position(lastUci, fen) =>
+        client ! ClientIn.Fen(gameId, lastUci, fen)
       }
     }
 

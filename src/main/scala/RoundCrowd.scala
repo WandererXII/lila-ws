@@ -56,10 +56,10 @@ final class RoundCrowd(
   private def publish(roomId: RoomId, round: RoundState): Unit =
     outputBatch(outputOf(roomId, round))
 
-  private val outputBatch = groupedWithin[Output](256, 500.millis) { outputs =>
+  private val outputBatch = groupedWithin[Output](512, 700.millis) { outputs =>
     val aggregated = outputs
-      .foldLeft(Map.empty[RoomId, Output]) {
-        case (crowds, crowd) => crowds.updated(crowd.room.roomId, crowd)
+      .foldLeft(Map.empty[RoomId, Output]) { case (crowds, crowd) =>
+        crowds.updated(crowd.room.roomId, crowd)
       }
       .values
     lila.emit.round(LilaIn.RoundOnlines(aggregated))
@@ -97,12 +97,12 @@ object RoundCrowd {
     def disconnect(user: Option[User], player: Option[Color]) =
       copy(
         room = if (player.isDefined) room else room disconnect user,
-        players = player.fold(players)(c => players.update(c, _ - 1))
+        players = player.fold(players)(c => players.update(c, nb => Math.max(0, nb - 1)))
       )
-    def botOnline(color: Color, online: Boolean): Option[RoundState] =
-      if (online == players(color) > 0) None
-      else if (online) Some(connect(None, Some(color)))
-      else Some(disconnect(None, Some(color)))
+    def botOnline(color: Color, online: Boolean): Option[RoundState] = Some {
+      if (online) connect(None, Some(color))
+      else disconnect(None, Some(color))
+    }
     def isEmpty = room.isEmpty && players.forall(1 > _)
   }
 }

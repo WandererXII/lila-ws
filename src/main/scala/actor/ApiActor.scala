@@ -23,7 +23,7 @@ object ApiActor {
 
   private def apply(deps: Deps): Behavior[ClientMsg] =
     Behaviors
-      .receive[ClientMsg] { (ctx, msg) =>
+      .receive[ClientMsg] { (_, msg) =>
         msg match {
 
           case ClientCtrl.ApiDisconnect => Behaviors.stopped
@@ -34,10 +34,9 @@ object ApiActor {
         }
 
       }
-      .receiveSignal {
-        case (ctx, PostStop) =>
-          onStop(deps, ctx)
-          Behaviors.same
+      .receiveSignal { case (ctx, PostStop) =>
+        onStop(deps, ctx)
+        Behaviors.same
       }
 
   case class Deps(user: User, services: Services)
