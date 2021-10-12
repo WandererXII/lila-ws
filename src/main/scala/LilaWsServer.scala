@@ -3,6 +3,7 @@ package lila.ws
 import akka.actor.typed.{ ActorSystem, Scheduler }
 import com.softwaremill.macwire._
 import com.typesafe.config.{ Config, ConfigFactory }
+import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
@@ -37,13 +38,14 @@ object Boot extends App {
   lazy val nettyServer   = wire[netty.NettyServer]
   lazy val monitor       = wire[Monitor]
 
-  wire[LilaWsServer].start
+  wire[LilaWsServer].start()
 }
 
 final class LilaWsServer(
     nettyServer: netty.NettyServer,
-    handlers: LilaHandler, // must eagerly instanciate!
+    @nowarn("cat=unused") handlers: LilaHandler, // must eagerly instanciate!
     lila: Lila,
+    lobby: Lobby,
     monitor: Monitor,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
@@ -62,6 +64,11 @@ final class LilaWsServer(
 
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
+    }
+
+    scheduler.scheduleWithFixedDelay(4.seconds, 1201.millis) { () =>
+      val counters = lobby.pong.get
+      lila.emit.lobby(ipc.LilaIn.Counters(counters.members, counters.rounds))
     }
 
     nettyServer.start() // blocks
