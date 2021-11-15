@@ -168,7 +168,7 @@ object ClientIn {
               .add("opening" -> opening)
               .add("check" -> check)
               .add("drops" -> drops.map { drops =>
-                JsString(drops.map(_.key).mkString)
+                JsString(drops.map(_.uciKey).mkString)
               })
               .add("crazy" -> crazyData)
           )

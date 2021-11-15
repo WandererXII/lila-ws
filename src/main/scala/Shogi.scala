@@ -1,5 +1,7 @@
 package lila.ws
 
+import cats.syntax.option._
+
 import play.api.libs.json._
 
 import shogi.format.{ FEN, Uci, UciCharPair }
@@ -110,7 +112,7 @@ object Shogi {
     implicit val pathWrite        = Writes[Path] { path => JsString(path.value) }
     implicit val uciWrite         = Writes[Uci] { uci => JsString(uci.uci) }
     implicit val uciCharPairWrite = Writes[UciCharPair] { ucp => JsString(ucp.toString) }
-    implicit val posWrite         = Writes[Pos] { pos => JsString(pos.key) }
+    implicit val posWrite         = Writes[Pos] { pos => JsString(pos.uciKey) }
     implicit val chapterIdWrite   = Writes[ChapterId] { ch => JsString(ch.value) }
     implicit val openingWrite = Writes[FullOpening] { o =>
       Json.obj(
@@ -135,7 +137,7 @@ object Shogi {
 
     implicit val crazyhousePocketWriter: OWrites[Hand] = OWrites { h =>
       JsObject(
-        h.roleMap.filter(kv => 0 < kv._2).map { kv =>
+        h.handMap.filter(kv => 0 < kv._2).map { kv =>
           kv._1.name -> JsNumber(kv._2)
         }
       )
