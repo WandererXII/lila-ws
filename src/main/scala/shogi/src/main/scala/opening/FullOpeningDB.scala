@@ -2,6 +2,7 @@ package shogi
 package opening
 
 import format.FEN
+import cats.syntax.option._
 
 object FullOpeningDB {
 
@@ -39,8 +40,8 @@ object FullOpeningDB {
       .flatMap {
         _.zipWithIndex.drop(1).foldRight(none[FullOpening.AtPly]) {
           case ((situation, ply), None) =>
-            val color = if (ply % 2 == 0) " b " else " w "
-            val fen   = format.Forsyth.exportSituation(situation)
+            // val color = if (ply % 2 == 0) " b " else " w "
+            val fen = format.Forsyth.exportSituation(situation)
             byFen get fen map (_ atPly ply)
           case (_, found) => found
         }

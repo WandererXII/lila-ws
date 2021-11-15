@@ -1,5 +1,6 @@
 package shogi
 
+import cats.data.Validated
 import format.{ pgn, Uci }
 
 case class Game(
@@ -7,14 +8,15 @@ case class Game(
     pgnMoves: Vector[String] = Vector(),
     clock: Option[Clock] = None,
     turns: Int = 0, // plies
-    startedAtTurn: Int = 0
+    startedAtTurn: Int = 0, // plies
+    startedAtMove: Int = 1
 ) {
   def apply(
       orig: Pos,
       dest: Pos,
       promotion: Boolean = false,
       metrics: MoveMetrics = MoveMetrics()
-  ): Valid[(Game, Move)] = {
+  ): Validated[String, (Game, Move)] = {
     situation.move(orig, dest, promotion).map(_ withMetrics metrics) map { move =>
       apply(move) -> move
     }
@@ -35,7 +37,7 @@ case class Game(
       role: Role,
       pos: Pos,
       metrics: MoveMetrics = MoveMetrics()
-  ): Valid[(Game, Drop)] =
+  ): Validated[String, (Game, Drop)] =
     situation.drop(role, pos).map(_ withMetrics metrics) map { drop =>
       applyDrop(drop) -> drop
     }
@@ -59,9 +61,9 @@ case class Game(
       }
     }
 
-  def apply(uci: Uci.Move): Valid[(Game, Move)] = apply(uci.orig, uci.dest, uci.promotion)
-  def apply(uci: Uci.Drop): Valid[(Game, Drop)] = drop(uci.role, uci.pos)
-  def apply(uci: Uci): Valid[(Game, MoveOrDrop)] = {
+  def apply(uci: Uci.Move): Validated[String, (Game, Move)] = apply(uci.orig, uci.dest, uci.promotion)
+  def apply(uci: Uci.Drop): Validated[String, (Game, Drop)] = drop(uci.role, uci.pos)
+  def apply(uci: Uci): Validated[String, (Game, MoveOrDrop)] = {
     uci match {
       case u: Uci.Move => apply(u) map { case (g, m) => g -> Left(m) }
       case u: Uci.Drop => apply(u) map { case (g, d) => g -> Right(d) }
@@ -74,14 +76,13 @@ case class Game(
 
   def isStandardInit = board.pieces == shogi.variant.Standard.pieces
 
-  /** Fullmove number: The number of the full move.
-    * It starts at 1, and is incremented after Gote's move.
-    */
+  // Fullmove number: The number of the full move.
+  // It starts at 1, and is incremented after Gote's move.
   def fullMoveNumber: Int = 1 + turns / 2
 
-  def moveNumber: Int = 1 + turns
+  def playedPlies: Int = turns - startedAtTurn
 
-  def moveString = s"${moveNumber}."
+  def moveNumber: Int = startedAtMove + playedPlies
 
   def withBoard(b: Board) = copy(situation = situation.copy(board = b))
 
@@ -117,7 +118,9 @@ object Game {
             },
             color = parsed.situation.color
           ),
-          turns = parsed.turns
+          turns = parsed.turns,
+          startedAtTurn = parsed.turns,
+          startedAtMove = parsed.moveNumber
         )
       }
   }

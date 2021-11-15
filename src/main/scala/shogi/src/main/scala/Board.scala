@@ -1,6 +1,5 @@
 package shogi
 
-import Pos.posAt
 import variant.Variant
 
 case class Board(
@@ -12,7 +11,7 @@ case class Board(
 
   def apply(at: Pos): Option[Piece] = pieces get at
 
-  def apply(x: Int, y: Int): Option[Piece] = posAt(x, y) flatMap pieces.get
+  def apply(x: Int, y: Int): Option[Piece] = Pos.at(x, y) flatMap pieces.get
 
   lazy val actors: Map[Pos, Actor] = pieces map { case (pos, piece) =>
     (pos, Actor(piece, pos, this))
@@ -26,27 +25,28 @@ case class Board(
   def rolesOf(c: Color): List[Role] =
     pieces.values
       .collect {
-        case piece if piece.color == c => piece.role
+        case piece if piece is c => piece.role
       }
       .to(List)
 
   def occupiedPawnFiles(c: Color): List[Int] =
     pieces
       .collect {
-        case (pos, piece) if (piece.color == c) && (piece.role == Pawn) => pos.x
+        case (pos, piece) if (piece is c) && (piece is Pawn) => pos.x
       }
       .to(List)
 
   def rolesInPromotionZoneOf(c: Color): List[Role] =
     pieces
       .collect {
-        case (pos, piece) if (piece.color == c) && (c.promotableZone contains pos.y) => piece.role
+        case (pos, piece) if (piece is c) && (variant.promotionRanks(c) contains pos.y) => piece.role
       }
       .to(List)
 
   def actorAt(at: Pos): Option[Actor] = actors get at
 
   def piecesOf(c: Color): Map[Pos, Piece] = pieces filter (_._2 is c)
+  def piecesOf(r: Role): Map[Pos, Piece]  = pieces filter (_._2 is r)
 
   lazy val kingPos: Map[Color, Pos] = pieces.collect { case (pos, Piece(color, King)) =>
     color -> pos
@@ -71,10 +71,10 @@ case class Board(
 
   def place(piece: Piece, at: Pos): Option[Board] =
     if (pieces contains at) None
-    else Some(copy(pieces = pieces + ((at, piece))))
+    else Option(copy(pieces = pieces + ((at, piece))))
 
   def take(at: Pos): Option[Board] =
-    if (pieces contains at) Some(copy(pieces = pieces - at))
+    if (pieces contains at) Option(copy(pieces = pieces - at))
     else None
 
   def move(orig: Pos, dest: Pos): Option[Board] =
@@ -100,7 +100,7 @@ case class Board(
   def promote(pos: Pos): Option[Board] =
     for {
       piece        <- apply(pos)
-      promotedRole <- Role.promotesTo(piece.role)
+      promotedRole <- variant.promote(piece.role)
       b2           <- take(pos)
       b3           <- b2.place(Piece(piece.color, promotedRole), pos)
     } yield b3
@@ -113,20 +113,21 @@ case class Board(
     copy(variant = v).ensureCrazyData
   }
 
-  def withCrazyData(data: Hands)         = copy(crazyData = Some(data))
+  def withCrazyData(data: Hands)         = copy(crazyData = Option(data))
   def withCrazyData(data: Option[Hands]) = copy(crazyData = data)
   def withCrazyData(f: Hands => Hands): Board =
-    withCrazyData(f(crazyData | Hands.init))
+    withCrazyData(f(crazyData | Hands.init(variant)))
 
-  def ensureCrazyData = withCrazyData(crazyData | Hands.init)
+  def ensureCrazyData = withCrazyData(crazyData | Hands.init(variant))
 
   def updateHistory(f: History => History) = copy(history = f(history))
 
   def count(p: Piece): Int = pieces.values count (_ == p)
+  def count(r: Role): Int  = pieces.values count (_.role == r)
   def count(c: Color): Int = pieces.values count (_.color == c)
 
   def kingEntered(c: Color): Boolean =
-    kingPosOf(c) exists (pos => c.promotableZone contains pos.y)
+    kingPosOf(c) exists (pos => variant.promotionRanks(c) contains pos.y)
 
   def enoughImpasseValue(c: Color): Boolean = {
     val rp = rolesInPromotionZoneOf(c)
@@ -135,13 +136,8 @@ case class Board(
     rp.size > 10 && piecesValue >= c.fold(28, 27)
   }
 
-  def impasse(c: Color): Boolean =
-    kingEntered(c) &&
-      !c.fold(checkSente, checkGote) &&
-      enoughImpasseValue(c)
-
   def tryRule(c: Color): Boolean =
-    kingPosOf(c) == c.fold(posAt(5, 9), posAt(5, 1))
+    kingPosOf(c) == c.fold(Pos.at(5, 1), Pos.at(5, 9))
 
   def perpetualCheck: Boolean = {
     val checks = history.checkCount
@@ -166,7 +162,7 @@ case class Board(
 object Board {
 
   def apply(pieces: Iterable[(Pos, Piece)], variant: Variant): Board =
-    Board(pieces.toMap, History(), variant, Some(Hands.init))
+    Board(pieces.toMap, History(), variant, Option(Hands.init(variant)))
 
   def init(variant: Variant): Board = Board(variant.pieces, variant)
 

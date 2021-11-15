@@ -1,6 +1,9 @@
 package shogi
 package format
 
+import cats.data.Validated
+import cats.syntax.option._
+
 case class ParsedNotation(
     initialPosition: InitialPosition,
     tags: Tags,
@@ -15,7 +18,7 @@ object ParsedMoves {
 
 sealed trait ParsedMove {
 
-  def apply(situation: Situation): Valid[MoveOrDrop]
+  def apply(situation: Situation): Validated[String, MoveOrDrop]
 
   def getDest: Pos
 
@@ -53,16 +56,14 @@ case class KifStd(
 
   def getDest = dest
 
-  def move(situation: Situation): Valid[shogi.Move] =
+  def move(situation: Situation): Validated[String, shogi.Move] =
     situation.board.actorAt(orig) flatMap { a =>
-      a.trustedMoves() find { m =>
-        m.dest == dest && a.board.variant.kingSafety(a, m)
+      a.trustedMoves find { m =>
+        m.dest == dest && m.promotion == promotion && a.board.variant.kingSafety(a, m)
       }
     } match {
-      case None => {
-        s"No move found: $this\n$situation".failureNel
-      }
-      case Some(move) => move withPromotion (Role.promotesTo(role), promotion) toValid "Wrong promotion"
+      case None       => Validated invalid s"No move found: $this\n$situation"
+      case Some(move) => Validated valid move
     }
 
 }
@@ -80,19 +81,14 @@ case class CsaStd(
 
   def getDest = dest
 
-  def move(situation: Situation): Valid[shogi.Move] =
+  def move(situation: Situation): Validated[String, shogi.Move] =
     situation.board.actorAt(orig) flatMap { a =>
-      a.trustedMoves() find { m =>
-        m.dest == dest && a.board.variant.kingSafety(a, m)
+      a.trustedMoves find { m =>
+        m.dest == dest && m.promotion == (role != m.piece.role) && a.board.variant.kingSafety(a, m)
       }
     } match {
-      case None => {
-        s"No move found: $this\n$situation".failureNel
-      }
-      case Some(move) =>
-        move withPromotion (Role.promotesTo(
-          move.piece.role
-        ), role != move.piece.role) toValid "Wrong promotion"
+      case None       => Validated invalid s"No move found: $this\n$situation"
+      case Some(move) => Validated valid move
     }
 
 }
@@ -119,23 +115,21 @@ case class PGNStd(
 
   def getDest = dest
 
-  def move(situation: Situation): Valid[shogi.Move] =
+  def move(situation: Situation): Validated[String, shogi.Move] =
     situation.board.pieces.foldLeft(none[shogi.Move]) {
       case (None, (pos, piece))
           if piece.color == situation.color && piece.role == role && compare(file, pos.x) && compare(
             rank,
             pos.y
-          ) && piece.eyesMovable(pos, dest) =>
+          ) && piece.eyes(pos, dest) =>
         val a = Actor(piece, pos, situation.board)
-        a.trustedMoves() find { m =>
-          m.dest == dest && a.board.variant.kingSafety(a, m)
+        a.trustedMoves find { m =>
+          m.dest == dest && m.promotion == promotion && a.board.variant.kingSafety(a, m)
         }
       case (m, _) => m
     } match {
-      case None => {
-        s"No move found: $this\n$situation".failureNel
-      }
-      case Some(move) => move withPromotion (Role.promotesTo(role), promotion) toValid "Wrong promotion"
+      case None       => Validated invalid s"No move found: $this\n$situation"
+      case Some(move) => Validated valid move
     }
 
   private def compare[A](a: Option[A], b: A) = a.fold(true)(b ==)
@@ -154,7 +148,7 @@ case class Drop(
 
   def withMetas(m: Metas) = copy(metas = m)
 
-  def drop(situation: Situation): Valid[shogi.Drop] =
+  def drop(situation: Situation): Validated[String, shogi.Drop] =
     situation.drop(role, pos)
 }
 

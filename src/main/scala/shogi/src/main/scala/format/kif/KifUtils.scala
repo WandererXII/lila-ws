@@ -2,7 +2,7 @@ package shogi
 package format
 package kif
 
-import scala._
+import variant._
 
 object KifUtils {
   def toDigit(c: Char): Char = {
@@ -61,7 +61,7 @@ object KifUtils {
       if (ord == "") 1
       else if (ord.contains('十')) 10 * orderHelper(ord.filterNot(_ == '十'))
       else if (ord.contains('百')) 100 * orderHelper(ord.filterNot(_ == '百'))
-      else parseIntOption(ord.map(toDigit _)).getOrElse(0)
+      else ord.map(toDigit _).toIntOption.getOrElse(0)
     }
     str.split("""(?<=(百|十))""").foldLeft(0) { (acc, cur) =>
       acc + orderHelper(cur)
@@ -76,5 +76,10 @@ object KifUtils {
     else if (num >= 10) "十" + intToKanji(num % 10)
     else num.toString.map(toKanjiDigit _)
   }
+
+  val defaultHandicaps: Map[Variant, String] = Map(
+    Minishogi -> "五々将棋",
+    Standard  -> "平手"
+  )
 
 }

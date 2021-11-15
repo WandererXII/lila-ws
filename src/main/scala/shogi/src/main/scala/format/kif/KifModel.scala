@@ -2,12 +2,8 @@ package shogi
 package format
 package kif
 
-import scala._
-
-// This is temporary for exporting KIFs
-// The plan is to get completely rid of pgn/san
-// and not work around it like we do here
-// But I want to do that gradually - #407
+import cats.syntax.option._
+import variant._
 
 case class Kif(
     tags: Tags,
@@ -86,7 +82,7 @@ object Kif {
           }
           s"$playerTag：${if (playerName == "?") "" else playerName}"
         } else if (tag == Tag.Handicap) {
-          renderSetup(tags.fen)
+          renderSetup(tags.variant | Standard, tags.fen)
         } else {
           tags(tag.name).fold("")(tagValue => {
             if (tagValue != "?" && tagValue != "") s"${tag.kifName}：$tagValue"
@@ -97,13 +93,15 @@ object Kif {
       .filter(_.nonEmpty)
       .mkString("\n")
 
-  def renderSetup(fen: Option[FEN]): String = {
-    fen.fold(s"${Tag.Handicap.kifName}：平手") { fen =>
+  def renderSetup(variant: Variant, fen: Option[FEN]): String =
+    fen.filterNot(variant.initialFen == _.value).fold {
+      val handicapName = KifUtils.defaultHandicaps.getOrElse(variant, variant.name)
+      s"${Tag.Handicap.kifName}：$handicapName"
+    } { fen =>
       getHandicapName(fen).fold((Forsyth << fen.value).fold("")(renderSituation _))(hc =>
         s"${Tag.Handicap.kifName}：$hc"
       )
     }
-  }
 
   def renderSituation(sit: Situation): String = {
     val kifBoard = new scala.collection.mutable.StringBuilder(256)
@@ -112,9 +110,11 @@ object Kif {
       PromotedKnight -> "圭",
       PromotedLance  -> "杏"
     )
-    for (y <- 9 to 1 by -1) {
+    val nbRanks = sit.board.variant.numberOfRanks
+    val nbFiles = sit.board.variant.numberOfFiles
+    for (y <- 1 to nbRanks) {
       kifBoard append "|"
-      for (x <- 1 to 9) {
+      for (x <- nbFiles to 1 by -1) {
         sit.board(x, y) match {
           case None => kifBoard append " ・"
           case Some(piece) =>
@@ -122,15 +122,15 @@ object Kif {
             kifBoard append s"$color${specialKifs.getOrElse(piece.role, piece.role.kif)}"
         }
       }
-      kifBoard append s"|${KifUtils.intToKanji(10 - y)}"
-      if (y > 1) kifBoard append '\n'
+      kifBoard append s"|${KifUtils.intToKanji(y)}"
+      if (y < nbRanks) kifBoard append '\n'
     }
     List(
       sit.board.crazyData.fold("")(hs => "後手の持駒：" + renderHand(hs(Gote))),
-      "  ９ ８ ７ ６ ５ ４ ３ ２ １",
-      "+---------------------------+",
+      s" ${" ９ ８ ７ ６ ５ ４ ３ ２ １".takeRight(nbFiles * 2)}",
+      s"+${"-" * (nbFiles * 3)}+",
       kifBoard.toString,
-      "+---------------------------+",
+      s"+${"-" * (nbFiles * 3)}+",
       sit.board.crazyData.fold("")(hs => "先手の持駒：" + renderHand(hs(Sente))),
       if (sit.color == Gote) "後手番" else ""
     ).filter(_.nonEmpty).mkString("\n")
@@ -139,7 +139,7 @@ object Kif {
   private def renderHand(hand: Hand): String = {
     if (hand.size == 0) "なし"
     else
-      Role.handRoles
+      Standard.handRoles
         .map { r =>
           val cnt = hand(r)
           if (cnt == 1) r.kif
@@ -182,7 +182,7 @@ object Kif {
   )
 
   private def makeDestSquare(sq: Pos): String =
-    s"${((10 - sq.x) + 48 + 65248).toChar}${KifUtils.intToKanji(10 - sq.y)}"
+    s"${((sq.x) + 48 + 65248).toChar}${KifUtils.intToKanji(sq.y)}"
 
   private def makeOrigSquare(sq: Pos): String =
     sq.usiKey.map(KifUtils toDigit _)

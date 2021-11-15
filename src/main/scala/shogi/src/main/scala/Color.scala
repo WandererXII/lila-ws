@@ -2,38 +2,33 @@ package shogi
 
 sealed trait Color {
 
-  def -(role: Role) = Piece(this, role)
+  final def -(role: Role) = Piece(this, role)
 
-  def fold[A](s: => A, g: => A): A = if (sente) s else g
+  final def fold[A](s: => A, g: => A): A = if (sente) s else g
 
-  val unary_! : Color
-
-  val passablePawnY: Int
-  val promotableZone: List[Int]
-  val backrankY: Int
-  val backrankY2: Int
+  def unary_! : Color
 
   val letter: Char
   val name: String
   val engName: String
 
-  def pawn           = this - Pawn
-  def gold           = this - Gold
-  def silver         = this - Silver
-  def lance          = this - Lance
-  def bishop         = this - Bishop
-  def knight         = this - Knight
-  def rook           = this - Rook
-  def tokin          = this - Tokin
-  def dragon         = this - Dragon
-  def horse          = this - Horse
-  def promotedsilver = this - PromotedSilver
-  def promotedknight = this - PromotedKnight
-  def promotedlance  = this - PromotedLance
-  def king           = this - King
+  final def pawn           = this - Pawn
+  final def gold           = this - Gold
+  final def silver         = this - Silver
+  final def lance          = this - Lance
+  final def bishop         = this - Bishop
+  final def knight         = this - Knight
+  final def rook           = this - Rook
+  final def tokin          = this - Tokin
+  final def dragon         = this - Dragon
+  final def horse          = this - Horse
+  final def promotedsilver = this - PromotedSilver
+  final def promotedknight = this - PromotedKnight
+  final def promotedlance  = this - PromotedLance
+  final def king           = this - King
 
-  val sente = this == Color.Sente
-  val gote  = this == Color.Gote
+  final val sente = this == Color.Sente
+  final val gote  = this == Color.Gote
 }
 
 object Color {
@@ -65,12 +60,7 @@ object Color {
 
   case object Sente extends Color {
 
-    lazy val unary_! = Gote
-
-    val passablePawnY  = 5
-    val promotableZone = List(7, 8, 9)
-    val backrankY      = 9
-    val backrankY2     = 8
+    def unary_! = Gote
 
     val letter  = 'b'
     val engName = "black"
@@ -81,12 +71,7 @@ object Color {
 
   case object Gote extends Color {
 
-    val unary_! = Sente
-
-    val passablePawnY  = 4
-    val promotableZone = List(1, 2, 3)
-    val backrankY      = 1
-    val backrankY2     = 2
+    def unary_! = Sente
 
     val letter  = 'w'
     val engName = "white"
@@ -95,28 +80,24 @@ object Color {
     override val hashCode = 2
   }
 
-  def fromPly(ply: Int) = apply((ply & 1) == 0)
+  def fromPly(ply: Int) = fromSente((ply & 1) == 0)
 
-  def apply(b: Boolean): Color = if (b) Sente else Gote
+  def fromSente(isSente: Boolean): Color = if (isSente) Sente else Gote
 
-  def apply(n: String): Option[Color] =
-    if (n == "black" || n == "sente") Some(Sente)
-    else if (n == "white" || n == "gote") Some(Gote)
+  def fromName(n: String): Option[Color] =
+    if (n == "black" || n == "sente") Option(Sente)
+    else if (n == "white" || n == "gote") Option(Gote)
     else None
 
   def apply(c: Char): Option[Color] =
-    if (c == 'b') Some(Sente)
-    else if (c == 'w') Some(Gote)
+    if (c == 'b') Option(Sente)
+    else if (c == 'w') Option(Gote)
     else None
 
   val sente: Color = Sente
   val gote: Color  = Gote
 
   val all = List(Sente, Gote)
-
-  val names = all map (_.name)
-
-  def exists(name: String) = all exists (_.name == name)
 
   def showResult(color: Option[Color]) =
     color match {
@@ -127,8 +108,8 @@ object Color {
 
   def fromResult(result: String): Option[Color] =
     result match {
-      case "1-0" => Some(shogi.Sente)
-      case "0-1" => Some(shogi.Gote)
+      case "1-0" => Option(shogi.Sente)
+      case "0-1" => Option(shogi.Gote)
       case _     => None
     }
 }

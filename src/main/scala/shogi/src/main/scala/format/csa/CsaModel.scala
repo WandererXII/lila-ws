@@ -2,7 +2,8 @@ package shogi
 package format
 package csa
 
-import scala._
+import cats.syntax.option._
+import variant.Standard
 
 case class Csa(
     tags: Tags,
@@ -27,7 +28,7 @@ case class Csa(
   def render: String = {
     val initStr =
       if (initial.comments.nonEmpty)
-        initial.comments.map(Csa.fixComment _).mkString("") //.mkString("'", "\n'", "\n")
+        initial.comments.map(Csa.fixComment _).mkString("")
       else ""
     val header = Csa renderHeader tags
     val setup  = (Forsyth << (tags.fen.fold(Forsyth.initial)(_.value))).fold("")(Csa renderSituation _)
@@ -62,7 +63,7 @@ object Csa {
         s"${turn.fold("")(_.fold("+", "-"))}00${makeSquare(pos)}${role.csa}"
       case Uci.Move(orig, dest, prom) => {
         san.headOption.flatMap(s => Role.allByPgn.get(s)).fold(s"move parse error - $uci, $san") { r =>
-          val finalRole = if (prom) Role.promotesTo(r).getOrElse(r) else r
+          val finalRole = if (prom) Standard.promote(r).getOrElse(r) else r
           s"${turn.fold("")(_.fold("+", "-"))}${makeSquare(orig)}${makeSquare(dest)}${finalRole.csa}"
         }
       }
@@ -94,16 +95,16 @@ object Csa {
 
   def renderSituation(sit: Situation): String = {
     val csaBoard = new scala.collection.mutable.StringBuilder(256)
-    for (y <- 9 to 1 by -1) {
-      csaBoard append ("P" + (10 - y))
-      for (x <- 1 to 9) {
+    for (y <- 1 to 9) {
+      csaBoard append ("P" + y)
+      for (x <- 9 to 1 by -1) {
         sit.board(x, y) match {
           case None => csaBoard append " * "
           case Some(piece) =>
             csaBoard append s"${piece.csa}"
         }
       }
-      if (y > 1) csaBoard append '\n'
+      if (y < 9) csaBoard append '\n'
     }
     List(
       csaBoard.toString,
@@ -116,7 +117,7 @@ object Csa {
   private def renderHand(hand: Hand, prefix: String): String = {
     if (hand.size == 0) ""
     else
-      Role.handRoles
+      Standard.handRoles
         .map { r =>
           val cnt = hand(r)
           s"00${r.csa}".repeat(Math.min(cnt, 81))
@@ -162,7 +163,7 @@ object Csa {
   )
 
   private def makeSquare(sq: Pos): String =
-    s"${10 - sq.x}${10 - sq.y}"
+    s"${sq.x}${sq.y}"
 
   private def clockString(cur: NotationMove): Option[String] =
     cur.secondsSpent.map(spent => s",T$spent")

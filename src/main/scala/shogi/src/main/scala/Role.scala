@@ -1,61 +1,78 @@
 package shogi
 
-import Pos.posAt
-
 sealed trait Role {
   val kif: String
   val csa: String
   val forsyth: Char
-  lazy val forsythUpper: Char = forsyth.toUpper
   val forsythFull: String
+
+  lazy val forsythUpper: Char       = forsyth.toUpper
   lazy val forsythFullUpper: String = forsythFull.toUpperCase
   lazy val pgn: Char                = forsythUpper
-  lazy val name                     = toString.toLowerCase
-  val projection: Boolean
-  val dirs: Directions
-  val dirsOpposite: Directions
+  lazy val name: String             = toString.toLowerCase
+
+  val senteProjectionDirs: Directions
+  val goteProjectionDirs: Directions
+
+  val senteShortDirs: Directions
+  val goteShortDirs: Directions
+
+  // generating next possible position of piece based on previous position
+  // for pieces that don't have long range attacks it's gonna be None
   def dir(from: Pos, to: Pos): Option[Direction]
 }
 
 case object King extends Role {
-  val kif                      = "玉"
-  val csa                      = "OU"
-  val forsyth                  = 'k'
-  val forsythFull              = forsyth.toString
-  val dirs: Directions         = Rook.dirs ::: Bishop.dirs
-  val dirsOpposite: Directions = dirs
-  def dir(from: Pos, to: Pos)  = None
-  val projection               = false
+  val kif         = "玉"
+  val csa         = "OU"
+  val forsyth     = 'k'
+  val forsythFull = forsyth.toString
+
+  val senteProjectionDirs = Nil
+  val goteProjectionDirs  = Nil
+  val senteShortDirs      = Rook.senteProjectionDirs ::: Bishop.senteProjectionDirs
+  val goteShortDirs       = senteShortDirs
+
+  def dir(from: Pos, to: Pos): Option[Direction] = None
 }
+
 case object Rook extends Role {
-  val kif                      = "飛"
-  val csa                      = "HI"
-  val forsyth                  = 'r'
-  val forsythFull              = forsyth.toString
-  val dirs: Directions         = List(_.up, _.down, _.left, _.right)
-  val dirsOpposite: Directions = dirs
+  val kif         = "飛"
+  val csa         = "HI"
+  val forsyth     = 'r'
+  val forsythFull = forsyth.toString
+
+  val senteProjectionDirs = List(_.up, _.down, _.left, _.right)
+  val goteProjectionDirs  = senteProjectionDirs
+  val senteShortDirs      = Nil
+  val goteShortDirs       = Nil
+
   def dir(from: Pos, to: Pos) =
     if (to ?| from)
-      Some(
+      Option(
         if (to ?^ from) (_.up) else (_.down)
       )
     else if (to ?- from)
-      Some(
+      Option(
         if (to ?< from) (_.left) else (_.right)
       )
     else None
-  val projection = true
 }
+
 case object Bishop extends Role {
-  val kif                      = "角"
-  val csa                      = "KA"
-  val forsyth                  = 'b'
-  val forsythFull              = forsyth.toString
-  val dirs: Directions         = List(_.upLeft, _.upRight, _.downLeft, _.downRight)
-  val dirsOpposite: Directions = dirs
+  val kif         = "角"
+  val csa         = "KA"
+  val forsyth     = 'b'
+  val forsythFull = forsyth.toString
+
+  val senteProjectionDirs = List(_.upLeft, _.upRight, _.downLeft, _.downRight)
+  val goteProjectionDirs  = senteProjectionDirs
+  val senteShortDirs      = Nil
+  val goteShortDirs       = Nil
+
   def dir(from: Pos, to: Pos) =
     if (to onSameDiagonal from)
-      Some(
+      Option(
         if (to ?^ from) {
           if (to ?< from) (_.upLeft) else (_.upRight)
         } else {
@@ -63,129 +80,171 @@ case object Bishop extends Role {
         }
       )
     else None
-  val projection = true
 }
+
 case object Knight extends Role {
   val kif         = "桂"
   val csa         = "KE"
   val forsyth     = 'n'
   val forsythFull = forsyth.toString
-  val dirs: Directions = List(
-    p => posAt(p.x - 1, p.y + 2),
-    p => posAt(p.x + 1, p.y + 2)
+
+  val senteProjectionDirs = Nil
+  val goteProjectionDirs  = Nil
+  val senteShortDirs: Directions = List(
+    p => Pos.at(p.x - 1, p.y - 2),
+    p => Pos.at(p.x + 1, p.y - 2)
   )
-  val dirsOpposite: Directions = List(
-    p => posAt(p.x - 1, p.y - 2),
-    p => posAt(p.x + 1, p.y - 2)
+  val goteShortDirs: Directions = List(
+    p => Pos.at(p.x - 1, p.y + 2),
+    p => Pos.at(p.x + 1, p.y + 2)
   )
-  def dir(from: Pos, to: Pos) = None
-  val projection              = false
+
+  def dir(from: Pos, to: Pos): Option[Direction] = None
 }
+
 case object Pawn extends Role {
-  val kif                      = "歩"
-  val csa                      = "FU"
-  val forsyth                  = 'p'
-  val forsythFull              = forsyth.toString
-  val dirs: Directions         = List(_.up)
-  val dirsOpposite: Directions = List(_.down)
-  def dir(from: Pos, to: Pos)  = None
-  val projection               = false
+  val kif         = "歩"
+  val csa         = "FU"
+  val forsyth     = 'p'
+  val forsythFull = forsyth.toString
+
+  val senteProjectionDirs = Nil
+  val goteProjectionDirs  = Nil
+  val senteShortDirs      = List(_.up)
+  val goteShortDirs       = List(_.down)
+
+  def dir(from: Pos, to: Pos): Option[Direction] = None
 }
+
 case object Gold extends Role {
-  val kif                      = "金"
-  val csa                      = "KI"
-  val forsyth                  = 'g'
-  val forsythFull              = forsyth.toString
-  val dirs: Directions         = List(_.up, _.down, _.left, _.right, _.upLeft, _.upRight)
-  val dirsOpposite: Directions = List(_.up, _.down, _.left, _.right, _.downLeft, _.downRight)
-  def dir(from: Pos, to: Pos)  = None
-  val projection               = false
+  val kif         = "金"
+  val csa         = "KI"
+  val forsyth     = 'g'
+  val forsythFull = forsyth.toString
+
+  val senteProjectionDirs = Nil
+  val goteProjectionDirs  = Nil
+  val senteShortDirs      = List(_.up, _.down, _.left, _.right, _.upLeft, _.upRight)
+  val goteShortDirs       = List(_.up, _.down, _.left, _.right, _.downLeft, _.downRight)
+
+  def dir(from: Pos, to: Pos): Option[Direction] = None
 }
+
 case object Silver extends Role {
-  val kif                      = "銀"
-  val csa                      = "GI"
-  val forsyth                  = 's'
-  val forsythFull              = forsyth.toString
-  val dirs: Directions         = List(_.up, _.upLeft, _.upRight, _.downLeft, _.downRight)
-  val dirsOpposite: Directions = List(_.down, _.upLeft, _.upRight, _.downLeft, _.downRight)
-  def dir(from: Pos, to: Pos)  = None
-  val projection               = false
+  val kif         = "銀"
+  val csa         = "GI"
+  val forsyth     = 's'
+  val forsythFull = forsyth.toString
+
+  val senteProjectionDirs = Nil
+  val goteProjectionDirs  = Nil
+  val senteShortDirs      = List(_.up, _.upLeft, _.upRight, _.downLeft, _.downRight)
+  val goteShortDirs       = List(_.down, _.upLeft, _.upRight, _.downLeft, _.downRight)
+
+  def dir(from: Pos, to: Pos): Option[Direction] = None
 }
+
 case object Lance extends Role {
-  val kif                      = "香"
-  val csa                      = "KY"
-  val forsyth                  = 'l'
-  val forsythFull              = forsyth.toString
-  val dirs: Directions         = List(_.up)
-  val dirsOpposite: Directions = List(_.down)
+  val kif         = "香"
+  val csa         = "KY"
+  val forsyth     = 'l'
+  val forsythFull = forsyth.toString
+
+  val senteProjectionDirs = List(_.up)
+  val goteProjectionDirs  = List(_.down)
+  val senteShortDirs      = Nil
+  val goteShortDirs       = Nil
+
   def dir(from: Pos, to: Pos) =
     if (to ?| from)
-      Some(
+      Option(
         if (to ?^ from) (_.up) else (_.down)
       )
     else None
+}
 
-  val projection = true
-}
 case object Tokin extends Role {
-  val kif                                        = "と"
-  val csa                                        = "TO"
-  val forsyth                                    = 't'
-  val forsythFull                                = "+p"
-  val dirs: Directions                           = Gold.dirs
-  val dirsOpposite: Directions                   = Gold.dirsOpposite
+  val kif         = "と"
+  val csa         = "TO"
+  val forsyth     = 't'
+  val forsythFull = "+p"
+
+  val senteProjectionDirs = Gold.senteProjectionDirs
+  val goteProjectionDirs  = Gold.goteProjectionDirs
+  val senteShortDirs      = Gold.senteShortDirs
+  val goteShortDirs       = Gold.goteShortDirs
+
   def dir(from: Pos, to: Pos): Option[Direction] = None
-  val projection: Boolean                        = false
 }
+
 case object PromotedSilver extends Role {
-  val kif                                        = "成銀"
-  val csa                                        = "NG"
-  val forsyth                                    = 'a'
-  val forsythFull                                = "+s"
-  val dirs: Directions                           = Gold.dirs
-  val dirsOpposite: Directions                   = Gold.dirsOpposite
+  val kif         = "成銀"
+  val csa         = "NG"
+  val forsyth     = 'a'
+  val forsythFull = "+s"
+
+  val senteProjectionDirs = Gold.senteProjectionDirs
+  val goteProjectionDirs  = Gold.goteProjectionDirs
+  val senteShortDirs      = Gold.senteShortDirs
+  val goteShortDirs       = Gold.goteShortDirs
+
   def dir(from: Pos, to: Pos): Option[Direction] = None
-  val projection: Boolean                        = false
 }
+
 case object PromotedKnight extends Role {
-  val kif                                        = "成桂"
-  val csa                                        = "NK"
-  val forsyth: Char                              = 'm'
-  val forsythFull                                = "+n"
-  val dirs: Directions                           = Gold.dirs
-  val dirsOpposite: Directions                   = Gold.dirsOpposite
+  val kif         = "成桂"
+  val csa         = "NK"
+  val forsyth     = 'm'
+  val forsythFull = "+n"
+
+  val senteProjectionDirs = Gold.senteProjectionDirs
+  val goteProjectionDirs  = Gold.goteProjectionDirs
+  val senteShortDirs      = Gold.senteShortDirs
+  val goteShortDirs       = Gold.goteShortDirs
+
   def dir(from: Pos, to: Pos): Option[Direction] = None
-  val projection: Boolean                        = false
 }
+
 case object PromotedLance extends Role {
-  val kif                                        = "成香"
-  val csa                                        = "NY"
-  val forsyth: Char                              = 'u'
-  val forsythFull                                = "+l"
-  val dirs: Directions                           = Gold.dirs
-  val dirsOpposite: Directions                   = Gold.dirsOpposite
+  val kif         = "成香"
+  val csa         = "NY"
+  val forsyth     = 'u'
+  val forsythFull = "+l"
+
+  val senteProjectionDirs = Gold.senteProjectionDirs
+  val goteProjectionDirs  = Gold.goteProjectionDirs
+  val senteShortDirs      = Gold.senteShortDirs
+  val goteShortDirs       = Gold.goteShortDirs
+
   def dir(from: Pos, to: Pos): Option[Direction] = None
-  val projection: Boolean                        = false
 }
+
 case object Horse extends Role {
-  val kif                      = "馬"
-  val csa                      = "UM"
-  val forsyth: Char            = 'h'
-  val forsythFull              = "+b"
-  val dirs: Directions         = Bishop.dirs // only long range
-  val dirsOpposite: Directions = Bishop.dirsOpposite
-  def dir(from: Pos, to: Pos)  = Bishop.dir(from, to)
-  val projection               = true
+  val kif         = "馬"
+  val csa         = "UM"
+  val forsyth     = 'h'
+  val forsythFull = "+b"
+
+  val senteProjectionDirs = Bishop.senteProjectionDirs
+  val goteProjectionDirs  = Bishop.goteProjectionDirs
+  val senteShortDirs      = Rook.senteProjectionDirs
+  val goteShortDirs       = Rook.goteProjectionDirs
+
+  def dir(from: Pos, to: Pos) = Bishop.dir(from, to)
 }
+
 case object Dragon extends Role {
-  val kif                                        = "龍"
-  val csa                                        = "RY"
-  val forsyth: Char                              = 'd'
-  val forsythFull                                = "+r"
-  val dirs: Directions                           = Rook.dirs // only long range
-  val dirsOpposite: Directions                   = Rook.dirsOpposite
+  val kif         = "龍"
+  val csa         = "RY"
+  val forsyth     = 'd'
+  val forsythFull = "+r"
+
+  val senteProjectionDirs = Rook.senteProjectionDirs
+  val goteProjectionDirs  = Rook.goteProjectionDirs
+  val senteShortDirs      = Bishop.senteProjectionDirs
+  val goteShortDirs       = Bishop.goteProjectionDirs
+
   def dir(from: Pos, to: Pos): Option[Direction] = Rook.dir(from, to)
-  val projection: Boolean                        = true
 }
 
 object Role {
@@ -207,26 +266,6 @@ object Role {
     Dragon
   )
 
-  val promotableRoles: List[Role] = List(
-    Pawn,
-    Lance,
-    Knight,
-    Silver,
-    Bishop,
-    Rook
-  )
-
-  // Correct order
-  val handRoles: List[Role] = List(
-    Rook,
-    Bishop,
-    Gold,
-    Silver,
-    Knight,
-    Lance,
-    Pawn
-  )
-
   val allByForsyth: Map[Char, Role] = all map { r =>
     (r.forsyth, r)
   } toMap
@@ -237,7 +276,7 @@ object Role {
     (r.name, r)
   } toMap
 
-  val singleKifs = Map( // and others
+  val singleKifs = Map(
     "王" -> King,
     "兵" -> Pawn,
     "竜" -> Dragon,
@@ -261,35 +300,17 @@ object Role {
     (r.forsythFull, r)
   }) toMap
 
+  val allByFullForsythUpper: Map[String, Role] = (all map { r =>
+    (r.forsythFullUpper, r)
+  }) toMap
+
   val allByEverything: Map[String, Role] =
-    allByFullForsyth ++ allByKif
+    allByFullForsyth ++ allByFullForsythUpper ++ allByKif ++ allByCsa
 
   def forsyth(c: Char): Option[Role] = allByForsyth get c
+
   def kif(c: String): Option[Role] =
     allByKif get c
-
-  def promotesTo(r: Role): Option[Role] =
-    r match {
-      case Pawn   => Some(Tokin)
-      case Lance  => Some(PromotedLance)
-      case Knight => Some(PromotedKnight)
-      case Silver => Some(PromotedSilver)
-      case Bishop => Some(Horse)
-      case Rook   => Some(Dragon)
-      case _      => None
-    }
-
-  def demotesTo(r: Role): Option[Role] = {
-    r match {
-      case Tokin          => Some(Pawn)
-      case PromotedLance  => Some(Lance)
-      case PromotedSilver => Some(Silver)
-      case PromotedKnight => Some(Knight)
-      case Horse          => Some(Bishop)
-      case Dragon         => Some(Rook)
-      case _              => None
-    }
-  }
 
   def valueOf(r: Role): Int =
     r match {

@@ -1,32 +1,35 @@
 package shogi
 package format
 
-import scalaz.Validation.{ failure, success }
-
+import cats.data.Validated
 import pgn.Parser
 
 object Reader {
 
   sealed trait Result {
-    def valid: Valid[Replay]
+    def valid: Validated[String, Replay]
   }
 
   object Result {
     case class Complete(replay: Replay) extends Result {
-      def valid = success(replay)
+      def valid = Validated.valid(replay)
     }
-    case class Incomplete(replay: Replay, failures: Failures) extends Result {
-      def valid = failure(failures)
+    case class Incomplete(replay: Replay, failures: String) extends Result {
+      def valid = Validated.invalid(failures)
     }
   }
 
-  def full(pgn: String, tags: Tags = Tags.empty): Valid[Result] =
+  def full(pgn: String, tags: Tags = Tags.empty): Validated[String, Result] =
     fullWithPgn(pgn, identity, tags)
 
-  def moves(moveStrs: Iterable[String], tags: Tags): Valid[Result] =
+  def moves(moveStrs: Iterable[String], tags: Tags): Validated[String, Result] =
     movesWithPgn(moveStrs, identity, tags)
 
-  def fullWithPgn(pgn: String, op: ParsedMoves => ParsedMoves, tags: Tags = Tags.empty): Valid[Result] =
+  def fullWithPgn(
+      pgn: String,
+      op: ParsedMoves => ParsedMoves,
+      tags: Tags = Tags.empty
+  ): Validated[String, Result] =
     Parser.full(cleanUserInput(pgn)) map { parsed =>
       makeReplay(makeGame(parsed.tags ++ tags), op(parsed.parsedMoves))
     }
@@ -34,7 +37,11 @@ object Reader {
   def fullWithParsedMoves(parsed: ParsedNotation, op: ParsedMoves => ParsedMoves): Result =
     makeReplay(makeGame(parsed.tags), op(parsed.parsedMoves))
 
-  def movesWithPgn(moveStrs: Iterable[String], op: ParsedMoves => ParsedMoves, tags: Tags): Valid[Result] =
+  def movesWithPgn(
+      moveStrs: Iterable[String],
+      op: ParsedMoves => ParsedMoves,
+      tags: Tags
+  ): Validated[String, Result] =
     Parser.moves(moveStrs, tags.variant | variant.Variant.default) map { moves =>
       makeReplay(makeGame(tags), op(moves))
     }
@@ -52,14 +59,11 @@ object Reader {
       case (r: Result.Incomplete, _) => r
     }
 
-  private def makeGame(tags: Tags) = {
-    val g = Game(
+  private def makeGame(tags: Tags) =
+    Game(
       variantOption = tags(_.Variant) flatMap shogi.variant.Variant.byName,
       fen = tags(_.FEN)
-    )
-    g.copy(
-      startedAtTurn = g.turns,
+    ).copy(
       clock = tags.clockConfig map Clock.apply
     )
-  }
 }

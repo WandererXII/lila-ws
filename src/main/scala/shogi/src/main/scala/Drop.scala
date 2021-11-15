@@ -1,5 +1,6 @@
 package shogi
 
+import cats.syntax.option.none
 import format.Uci
 
 case class Drop(
@@ -20,7 +21,7 @@ case class Drop(
     val board = after.variant.finalizeBoard(
       after updateHistory { h =>
         h.copy(
-          lastMove = Some(Uci.Drop(piece.role, pos))
+          lastMove = Option(Uci.Drop(piece.role, pos))
         )
       },
       toUci,
@@ -28,18 +29,12 @@ case class Drop(
       !situationBefore.color
     )
 
-    board updateHistory {
-      _.copy(positionHashes = Hash(Situation(board, !piece.color)) ++ board.history.positionHashes)
+    board updateHistory { h =>
+      val basePositionHashes =
+        if (h.positionHashes.isEmpty) Hash(situationBefore) else board.history.positionHashes
+      h.copy(positionHashes = Hash(Situation(board, !piece.color)) ++ basePositionHashes)
     }
   }
-
-  def afterWithLastMove =
-    after.variant.finalizeBoard(
-      after.copy(history = after.history.withLastMove(toUci)),
-      toUci,
-      none,
-      !situationBefore.color
-    )
 
   def color = piece.color
 

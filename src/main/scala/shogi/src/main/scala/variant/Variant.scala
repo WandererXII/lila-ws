@@ -1,11 +1,12 @@
 package shogi
 package variant
 
+import cats.data.Validated
+import cats.syntax.option._
 import scala.annotation.nowarn
-import scalaz.Validation.FlatMap._
 
-import Pos.posAt
 import format.Uci
+import Pos._
 
 // Correctness depends on singletons for each variant ID
 abstract class Variant private[variant] (
@@ -17,31 +18,46 @@ abstract class Variant private[variant] (
     val standardInitialPosition: Boolean
 ) {
 
-  def pieces: Map[Pos, Piece]
-
   def standard     = this == Standard
-  def miniShogi    = this == MiniShogi
+  def minishogi    = this == Minishogi
   def fromPosition = this == FromPosition
 
   def exotic = !standard
 
-  protected val backRank  = Vector(Lance, Knight, Silver, Gold, King, Gold, Silver, Knight, Lance)
-  protected val backRank2 = Vector(Rook, Bishop)
-
   def initialFen = format.Forsyth.initial
 
-  def isValidPromotion(piece: Piece, promotion: Boolean, orig: Pos, dest: Pos) = {
+  def pieces: Map[Pos, Piece]
+  def hand: Map[Role, Int]
+
+  def allSquares: List[Pos]
+
+  def numberOfRanks: Int
+  def numberOfFiles: Int
+
+  // list of ranks where pieces of color can promote
+  def promotionRanks(color: Color): List[Int]
+
+  // furthest rank for color
+  def backrank(color: Color) = if (color == Sente) 1 else numberOfRanks
+
+  // true if piece will never be able to move from pos
+  def pieceInDeadZone(piece: Piece, pos: Pos): Boolean =
     piece.role match {
-      case Pawn if piece.color.backrankY == dest.y && !promotion  => false
-      case Lance if piece.color.backrankY == dest.y && !promotion => false
-      case Knight if (piece.color.backrankY == dest.y || piece.color.backrankY2 == dest.y) && !promotion =>
-        false
-      case _
-          if !promotion || (promotion && (piece.color.promotableZone contains orig.y) || (piece.color.promotableZone contains dest.y)) =>
-        true
-      case _ => false
+      case Pawn | Knight | Lance if backrank(piece.color) == pos.y => true
+      case Knight if Math.abs(backrank(piece.color) - pos.y) == 1  => true
+      case _                                                       => false
     }
-  }
+
+  def canPromote(move: Move): Boolean =
+    promotableRoles.contains(move.piece.role) &&
+      promotionRanks(move.color).exists(sq => sq == move.dest.y || sq == move.orig.y)
+
+  // Some variants could have an extra effect on the board on a move
+  def hasMoveEffects = false
+
+  // Applies a variant specific effect to the move.
+  // This helps decide whether a king is endangered by a move, for example
+  def addVariantEffect(move: Move): Move = move
 
   def validMoves(situation: Situation): Map[Pos, List[Move]] =
     situation.actors
@@ -51,15 +67,14 @@ abstract class Variant private[variant] (
       .to(Map)
 
   // Optimized for performance
-  def pieceThreatened(board: Board, color: Color, to: Pos, filter: Piece => Boolean = _ => true): Boolean = {
+  def pieceThreatened(board: Board, color: Color, to: Pos, filter: Piece => Boolean = _ => true): Boolean =
     board.pieces exists {
       case (pos, piece) if piece.color == color && filter(piece) && piece.eyes(pos, to) =>
-        (!piece.role.projection) || piece.role.dir(pos, to).exists {
+        !piece.longRangeDirs.nonEmpty || (pos touches to) || piece.role.dir(pos, to).exists {
           longRangeThreatens(board, pos, _, to)
-        } || ((piece.role == Horse || piece.role == Dragon) && (pos touches to))
+        }
       case _ => false
     }
-  }
 
   def kingThreatened(board: Board, color: Color, to: Pos, filter: Piece => Boolean = _ => true) =
     pieceThreatened(board, color, to, filter)
@@ -72,7 +87,7 @@ abstract class Variant private[variant] (
   def kingSafety(a: Actor, m: Move): Boolean =
     kingSafety(
       m,
-      if ((a.piece is King) || a.check) (_ => true) else (_.role.projection),
+      if ((a.piece is King) || a.check) (_ => true) else (_.longRangeDirs.nonEmpty),
       if (a.piece.role == King) None else a.board kingPosOf a.color
     )
 
@@ -81,69 +96,64 @@ abstract class Variant private[variant] (
       next == to || (!board.pieces.contains(next) && longRangeThreatens(board, next, dir, to))
     }
 
-  def move(situation: Situation, from: Pos, to: Pos, promotion: Boolean): Valid[Move] = {
+  def move(situation: Situation, from: Pos, to: Pos, promotion: Boolean): Validated[String, Move] = {
 
     // Find the move in the variant specific list of valid moves
-    def findMove(from: Pos, to: Pos) = situation.moves get from flatMap (_.find(_.dest == to))
+    def findMove(from: Pos, to: Pos) =
+      situation.moves get from flatMap (_.find(m => m.dest == to && m.promotion == promotion))
 
     for {
-      actor <- situation.board.actors get from toValid "No piece on " + from
-      _     <- actor.validIf(actor is situation.color, "Not my piece on " + from)
-      m1    <- findMove(from, to) toValid "Piece on " + from + " cannot move to " + to
-      m2 <- m1 withPromotion (Role.promotesTo(
-        actor.piece.role
-      ), promotion) toValid "Piece on " + from + " cannot promote to " + promotion
-      m3 <- m2 validIf (isValidPromotion(
-        actor.piece,
-        promotion,
-        from,
-        to
-      ), "Cannot promote to " + promotion + " in this game mode")
-    } yield m3
+      actor <- situation.board.actors get from toValid s"No piece on $from"
+      _ <-
+        if (actor is situation.color) Validated.valid(actor)
+        else Validated.invalid(s"Not my piece on $from")
+      move1 <- findMove(from, to) toValid s"Piece on $from cannot move to $to"
+    } yield move1
   }
 
-  def validPieceDrop(role: Role, pos: Pos, situation: Situation) = {
-    role match {
-      case Pawn =>
-        pos.y != situation.color.backrankY &&
-          !(situation.board.occupiedPawnFiles(situation.color) contains pos.x)
-      case Lance  => pos.y != situation.color.backrankY
-      case Knight => pos.y != situation.color.backrankY && pos.y != situation.color.backrankY2
-      case _      => true
-    }
-  }
+  def isValidPieceDrop(piece: Piece, pos: Pos, sit: Situation) =
+    !pieceInDeadZone(piece, pos) &&
+      (piece.role != Pawn || !(sit.board.occupiedPawnFiles(piece.color) contains pos.x))
 
-  def drop(situation: Situation, role: Role, pos: Pos): Valid[Drop] =
+  def drop(sit: Situation, role: Role, pos: Pos): Validated[String, Drop] =
     for {
-      d1 <- situation.board.crazyData toValid "Board has no crazyhouse data"
-      _  <- d1.validIf(validPieceDrop(role, pos, situation), s"Can't drop $role on $pos")
-      piece = Piece(situation.color, role)
+      d1 <- sit.board.crazyData toValid "Board has no hand data"
+      piece = Piece(sit.color, role)
+      _ <-
+        if (isValidPieceDrop(piece, pos, sit)) Validated.valid(d1)
+        else Validated.invalid(s"Can't drop $role on $pos")
       d2     <- d1.drop(piece) toValid s"No $piece to drop on $pos"
-      board1 <- situation.board.place(piece, pos) toValid s"Can't drop $role on $pos, it's occupied"
-      _      <- board1.validIf(!board1.check(situation.color), s"Dropping $role on $pos doesn't uncheck the king")
+      board1 <- sit.board.place(piece, pos) toValid s"Can't drop $role on $pos, it's occupied"
+      _ <-
+        if (!board1.check(sit.color)) Validated.valid(board1)
+        else Validated.invalid(s"Dropping $role on $pos doesn't uncheck the king")
     } yield Drop(
       piece = piece,
       pos = pos,
-      situationBefore = situation,
+      situationBefore = sit,
       after = board1 withCrazyData d2
     )
 
-  private def canDropStuff(situation: Situation) =
-    situation.board.crazyData.fold(false) { (hands: Hands) =>
-      val hand = hands(situation.color)
-      hand.size > 0 && possibleDrops(situation).fold(true) { squares =>
+  private def canDropStuff(sit: Situation) =
+    sit.board.crazyData.fold(false) { (hands: Hands) =>
+      val hand = hands(sit.color)
+      hand.size > 0 && possibleDrops(sit).fold(true) { squares =>
         squares.nonEmpty && {
-          squares.exists(s => hand.roleMap.exists(kv => kv._2 > 0 && validPieceDrop(kv._1, s, situation)))
+          squares.exists(s =>
+            hand.handMap.exists(kv => kv._2 > 0 && isValidPieceDrop(Piece(sit.color, kv._1), s, sit))
+          )
         }
       }
     }
 
+  // None means all, since we don't want to send all empty squares every round for every role
   def possibleDrops(situation: Situation): Option[List[Pos]] =
     if (!situation.check) None
     else situation.kingPos.map { blockades(situation, _) }
 
   private def blockades(situation: Situation, kingPos: Pos): List[Pos] = {
-    def attacker(piece: Piece) = piece.role.projection && piece.color != situation.color
+    def attacker(piece: Piece) = piece.longRangeDirs.nonEmpty && piece.color != situation.color
+    @scala.annotation.tailrec
     def forward(p: Pos, dir: Direction, squares: List[Pos]): List[Pos] =
       dir(p) match {
         case None                                                 => Nil
@@ -151,36 +161,39 @@ abstract class Variant private[variant] (
         case Some(next) if situation.board(next).isDefined        => Nil
         case Some(next)                                           => forward(next, dir, next :: squares)
       }
-    King.dirs flatMap { forward(kingPos, _, Nil) } filter { square =>
+    Pos.allDirections flatMap { forward(kingPos, _, Nil) } filter { square =>
       situation.board.place(Piece(situation.color, Knight), square) exists { defended =>
         !defended.check(situation.color)
       }
     }
   }
 
-  def staleMate(situation: Situation): Boolean =
-    !situation.check && situation.moves.isEmpty && !canDropStuff(situation)
+  def staleMate(sit: Situation): Boolean =
+    !sit.check && sit.moves.isEmpty && !canDropStuff(sit)
 
-  def checkmate(situation: Situation) = situation.check && situation.moves.isEmpty && !canDropStuff(situation)
+  def checkmate(sit: Situation): Boolean =
+    sit.check && sit.moves.isEmpty && !canDropStuff(sit)
+
+  def impasse(sit: Situation): Boolean =
+    sit.board.kingEntered(sit.color) &&
+      !sit.board.check(sit.color) &&
+      sit.board.enoughImpasseValue(sit.color)
 
   // Player wins or loses after their move
-  def winner(situation: Situation): Option[Color] = {
-    val pawnDrop = situation.board.history.lastMove.fold(false) { l => l.uci(0) == 'P' }
-    if (situation.checkMate && pawnDrop) Some(situation.color)
-    else if (situation.checkMate) Some(!situation.color)
-    else if (situation.staleMate) Some(!situation.color)
-    else if (situation.impasse) Some(situation.color)
-    else if (situation.perpetualCheck) Some(situation.color)
+  def winner(sit: Situation): Option[Color] = {
+    val pawnDrop = sit.board.history.lastMove.fold(false) { l => l.uci(0) == 'P' }
+    if (sit.checkMate && pawnDrop) Option(sit.color)
+    else if (sit.checkMate || sit.staleMate) Option(!sit.color)
+    else if (sit.impasse || sit.perpetualCheck) Option(sit.color)
     else None
   }
 
   @nowarn
-  def specialEnd(situation: Situation): Boolean = false
+  def specialEnd(sit: Situation): Boolean = false
 
-  @nowarn def specialDraw(situation: Situation) = false
+  @nowarn def specialDraw(sit: Situation) = false
 
-  /** Returns the material imbalance in pawns
-    */
+  // Returns the material imbalance in pawns
   def materialImbalance(board: Board): Int =
     board.pieces.values.foldLeft(0) { case (acc, Piece(color, role)) =>
       acc + Role.valueOf(role) * color.fold(1, -1)
@@ -188,30 +201,19 @@ abstract class Variant private[variant] (
       hs.value
     }
 
-  /** Returns true if neither player can win. The game should end immediately.
-    */
+  // Returns true if neither player can win. The game should end immediately.
   def isInsufficientMaterial(board: Board) =
     ((board.crazyData.fold(0) { _.size } + board.pieces.size) <= 2) &&
       board.pieces.forall { p => p._2 is King }
 
-  /** Returns true if the other player cannot win. This is relevant when the
-    * side to move times out or disconnects. Instead of losing on time,
-    * the game should be drawn.
-    */
+  // Returns true if the other player cannot win. This is relevant when the
+  // side to move times out or disconnects. Instead of losing on time,
+  // the game should be drawn.
   def opponentHasInsufficientMaterial(situation: Situation) =
     (situation.board.crazyData
       .fold(0) { hs => hs(!situation.color).size } + situation.board.piecesOf(!situation.color).size) <= 2
 
-  // Some variants could have an extra effect on the board on a move
-  def hasMoveEffects = false
-
-  /** Applies a variant specific effect to the move. This helps decide whether a king is endangered by a move, for
-    * example
-    */
-  def addVariantEffect(move: Move): Move = move
-
-  /** Once a move has been decided upon from the available legal moves, the board is finalized
-    */
+  // Once a move has been decided upon from the available legal moves, the board is finalized
   def finalizeBoard(board: Board, uci: format.Uci, capture: Option[Piece], color: Color): Board = {
     val board2 = board updateHistory {
       _.withCheck(color, board.check(color))
@@ -219,34 +221,35 @@ abstract class Variant private[variant] (
     uci match {
       case Uci.Move(_, _, _) =>
         board2.crazyData.fold(board2) { data =>
-          val d1 = capture.fold(data) { data.store _ }
-          board2 withCrazyData d1
+          capture.fold(board2) { p =>
+            val unpromotedRole  = unpromote(p.role).getOrElse(p.role)
+            val unpromotedPiece = Piece(p.color, unpromotedRole)
+            board2 withCrazyData data.store(unpromotedPiece)
+          }
         }
       case _ => board2
     }
   }
 
-  protected def unmovablePieces(board: Board, color: Color) = {
-    board.pieces.exists {
-      case (pos, Piece(c, r)) if c == color && (r == Pawn || r == Lance) && (c.backrankY == pos.y) => true
-      case (pos, Piece(c, r))
-          if c == color && (r == Knight) && (c.backrankY == pos.y || c.backrankY2 == pos.y) =>
-        true
-      case _ => false
+  protected def unmovablePieces(board: Board) =
+    board.pieces.exists { case (pos, piece) =>
+      pieceInDeadZone(piece, pos)
     }
-  }
 
   protected def validSide(board: Board, strict: Boolean)(color: Color) = {
     val roles     = board rolesOf color
     val pawnFiles = board occupiedPawnFiles color
-    roles.size > 0 &&
-    (!strict || { roles.count(_ == Pawn) <= 9 && roles.size <= 40 && roles.count(_ == King) == 1 }) &&
-    !unmovablePieces(board, color) && pawnFiles.distinct.size == pawnFiles.size && roles.count(_ == King) <= 1
+    roles.length > 0 && roles.forall(allRoles contains _) &&
+    (!strict || {
+      roles.length <= pieces.size && roles.count(_ == King) == 1
+    }) &&
+    !unmovablePieces(board) && pawnFiles.distinct.length == pawnFiles.length &&
+    roles.count(_ == King) <= 1 && board.crazyData.fold(true)(_.roles.forall(handRoles contains _))
   }
 
   def valid(board: Board, strict: Boolean) = Color.all forall validSide(board, strict) _
 
-  val roles = List(
+  val allRoles = List(
     Pawn,
     Lance,
     Knight,
@@ -263,26 +266,54 @@ abstract class Variant private[variant] (
     Tokin
   )
 
-  lazy val rolesByPgn: Map[Char, Role] = roles
+  // Correct order
+  val handRoles: List[Role] = List(
+    Rook,
+    Bishop,
+    Gold,
+    Silver,
+    Knight,
+    Lance,
+    Pawn
+  )
+
+  val promotableRoles: List[Role] = List(
+    Pawn,
+    Lance,
+    Knight,
+    Silver,
+    Bishop,
+    Rook
+  )
+
+  def promote(r: Role): Option[Role] =
+    r match {
+      case Pawn   => Option(Tokin)
+      case Lance  => Option(PromotedLance)
+      case Knight => Option(PromotedKnight)
+      case Silver => Option(PromotedSilver)
+      case Bishop => Option(Horse)
+      case Rook   => Option(Dragon)
+      case _      => None
+    }
+
+  def unpromote(r: Role): Option[Role] = {
+    r match {
+      case Tokin          => Option(Pawn)
+      case PromotedLance  => Option(Lance)
+      case PromotedSilver => Option(Silver)
+      case PromotedKnight => Option(Knight)
+      case Horse          => Option(Bishop)
+      case Dragon         => Option(Rook)
+      case _              => None
+    }
+  }
+
+  lazy val rolesByPgn: Map[Char, Role] = allRoles
     .map { r =>
       (r.pgn, r)
     }
     .to(Map)
-
-  lazy val rolesByFullForsyth: Map[String, Role] = roles
-    .map { r =>
-      (r.forsythFull.toUpperCase, r)
-    }
-    .to(Map)
-
-  lazy val rolesByCsa: Map[String, Role] = roles
-    .map { r =>
-      (r.csa, r)
-    }
-    .to(Map)
-
-  lazy val rolesByEverything: Map[String, Role] =
-    Role.allByKif ++ rolesByFullForsyth ++ rolesByCsa
 
   override def toString = s"Variant($name)"
 
@@ -296,12 +327,14 @@ object Variant {
 
   val all = List(
     Standard,
-    MiniShogi,
+    Minishogi,
     FromPosition
   )
+
   val byId = all map { v =>
     (v.id, v)
   } toMap
+
   val byKey = all map { v =>
     (v.key, v)
   } toMap
@@ -327,23 +360,58 @@ object Variant {
     shogi.variant.FromPosition
   )
 
-  private[variant] def symmetricRank(rank1: IndexedSeq[Role], rank2: IndexedSeq[Role]): Map[Pos, Piece] =
-    (for (y <- Seq(1, 3, 7, 9); x <- 1 to 9) yield {
-      posAt(x, y) map { pos =>
-        (
-          pos,
-          y match {
-            case 1 => Sente - rank1(x - 1)
-            case 3 => Sente.pawn
-            case 7 => Gote.pawn
-            case 9 => Gote - rank1(x - 1)
-          }
-        )
-      }
-    }).flatten.toMap ++ Map(
-      posAt(2, 2).get -> (Sente - rank2(1)),
-      posAt(8, 2).get -> (Sente - rank2(0)),
-      posAt(2, 8).get -> (Gote - rank2(0)),
-      posAt(8, 8).get -> (Gote - rank2(1))
+  private[variant] def defaultPieces: Map[Pos, Piece] =
+    Map(
+      SQ9I -> Sente.lance,
+      SQ8I -> Sente.knight,
+      SQ7I -> Sente.silver,
+      SQ6I -> Sente.gold,
+      SQ5I -> Sente.king,
+      SQ4I -> Sente.gold,
+      SQ3I -> Sente.silver,
+      SQ2I -> Sente.knight,
+      SQ1I -> Sente.lance,
+      SQ8H -> Sente.bishop,
+      SQ2H -> Sente.rook,
+      SQ9G -> Sente.pawn,
+      SQ8G -> Sente.pawn,
+      SQ7G -> Sente.pawn,
+      SQ6G -> Sente.pawn,
+      SQ5G -> Sente.pawn,
+      SQ4G -> Sente.pawn,
+      SQ3G -> Sente.pawn,
+      SQ2G -> Sente.pawn,
+      SQ1G -> Sente.pawn,
+      SQ9C -> Gote.pawn,
+      SQ8C -> Gote.pawn,
+      SQ7C -> Gote.pawn,
+      SQ6C -> Gote.pawn,
+      SQ5C -> Gote.pawn,
+      SQ4C -> Gote.pawn,
+      SQ3C -> Gote.pawn,
+      SQ2C -> Gote.pawn,
+      SQ1C -> Gote.pawn,
+      SQ8B -> Gote.rook,
+      SQ2B -> Gote.bishop,
+      SQ9A -> Gote.lance,
+      SQ8A -> Gote.knight,
+      SQ7A -> Gote.silver,
+      SQ6A -> Gote.gold,
+      SQ5A -> Gote.king,
+      SQ4A -> Gote.gold,
+      SQ3A -> Gote.silver,
+      SQ2A -> Gote.knight,
+      SQ1A -> Gote.lance
+    )
+
+  private[variant] def defaultHand: Map[Role, Int] =
+    Map(
+      Rook   -> 0,
+      Bishop -> 0,
+      Gold   -> 0,
+      Silver -> 0,
+      Knight -> 0,
+      Lance  -> 0,
+      Pawn   -> 0
     )
 }

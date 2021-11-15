@@ -1,5 +1,8 @@
 package shogi
 
+import cats.data.Validated
+import cats.implicits._
+
 import format.Uci
 
 case class Situation(board: Board, color: Color) {
@@ -14,8 +17,8 @@ case class Situation(board: Board, color: Color) {
 
   def drops: Option[List[Pos]] =
     board.variant match {
-      case v: variant.Standard.type => v possibleDrops this
-      case _                        => None
+      case v => v possibleDrops this
+      // case _ => None // for dropless variants
     }
 
   lazy val kingPos: Option[Pos] = board kingPosOf color
@@ -41,7 +44,7 @@ case class Situation(board: Board, color: Color) {
   // Not in use currently
   def tryRule = Color.all exists { board tryRule _ }
 
-  def impasse = board impasse color
+  def impasse = board.variant impasse this
 
   def perpetualCheck = board perpetualCheck
 
@@ -65,15 +68,15 @@ case class Situation(board: Board, color: Color) {
     else if (autoDraw) Status.Draw.some
     else none
 
-  def move(from: Pos, to: Pos, promotion: Boolean): Valid[Move] = {
+  def move(from: Pos, to: Pos, promotion: Boolean): Validated[String, Move] = {
     board.variant.move(this, from, to, promotion)
   }
 
-  def move(uci: Uci.Move): Valid[Move] = {
+  def move(uci: Uci.Move): Validated[String, Move] = {
     board.variant.move(this, uci.orig, uci.dest, uci.promotion)
   }
 
-  def drop(role: Role, pos: Pos): Valid[Drop] =
+  def drop(role: Role, pos: Pos): Validated[String, Drop] =
     board.variant.drop(this, role, pos)
 
   def withHistory(history: History) =

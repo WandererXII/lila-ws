@@ -1,6 +1,9 @@
 package shogi
 package format
 
+import cats.data.Validated
+import cats.implicits._
+
 sealed trait Uci {
 
   def uci: String
@@ -9,10 +12,10 @@ sealed trait Uci {
 
   def origDest: (Pos, Pos)
 
-  def apply(situation: Situation): Valid[MoveOrDrop]
+  def apply(situation: Situation): Validated[String, MoveOrDrop]
 }
 
-object Uci extends scalaz.std.OptionInstances with scalaz.syntax.ToTraverseOps {
+object Uci {
 
   case class Move(
       orig: Pos,
@@ -20,8 +23,8 @@ object Uci extends scalaz.std.OptionInstances with scalaz.syntax.ToTraverseOps {
       promotion: Boolean = false
   ) extends Uci {
 
-    def keys = orig.key + dest.key
-    def uci  = keys + promotionString
+    def uciKeys = orig.uciKey + dest.uciKey
+    def uci     = uciKeys + promotionString
 
     def usiKeys = orig.usiKey + dest.usiKey
     def usi     = usiKeys + promotionString
@@ -42,8 +45,8 @@ object Uci extends scalaz.std.OptionInstances with scalaz.syntax.ToTraverseOps {
 
     def apply(move: String): Option[Move] = {
       for {
-        orig <- Pos.posAt(move take 2)
-        dest <- Pos.posAt(move drop 2 take 2)
+        orig <- Pos.fromKey(move take 2)
+        dest <- Pos.fromKey(move.slice(2, 4))
         promotion = if ((move lift 4) == Some('+')) true else false
       } yield Move(orig, dest, promotion)
     }
@@ -57,8 +60,8 @@ object Uci extends scalaz.std.OptionInstances with scalaz.syntax.ToTraverseOps {
 
     def fromStrings(origS: String, destS: String, promS: Option[String]) = {
       for {
-        orig <- Pos.posAt(origS)
-        dest <- Pos.posAt(destS)
+        orig <- Pos.fromKey(origS)
+        dest <- Pos.fromKey(destS)
         promotion = if (promS.isDefined && promS != Some("=")) true else false
       } yield Move(orig, dest, promotion)
     }
@@ -66,7 +69,7 @@ object Uci extends scalaz.std.OptionInstances with scalaz.syntax.ToTraverseOps {
 
   case class Drop(role: Role, pos: Pos) extends Uci {
 
-    def uci = s"${role.pgn}*${pos.key}"
+    def uci = s"${role.pgn}*${pos.uciKey}"
 
     def usi = s"${role.pgn}*${pos.usiKey}"
 
@@ -82,7 +85,7 @@ object Uci extends scalaz.std.OptionInstances with scalaz.syntax.ToTraverseOps {
     def fromStrings(roleS: String, posS: String) =
       for {
         role <- Role.allByName get roleS
-        pos  <- Pos.posAt(posS)
+        pos  <- Pos.fromKey(posS)
       } yield Drop(role, pos)
   }
 
@@ -95,7 +98,7 @@ object Uci extends scalaz.std.OptionInstances with scalaz.syntax.ToTraverseOps {
   def apply(move: String): Option[Uci] =
     if (move lift 1 contains '*') for {
       role <- move.headOption flatMap Role.allByPgn.get
-      pos  <- Pos.posAt(move drop 2 take 2)
+      pos  <- Pos.fromKey(move.slice(2, 4))
     } yield Uci.Drop(role, pos)
     else Uci.Move(move)
 

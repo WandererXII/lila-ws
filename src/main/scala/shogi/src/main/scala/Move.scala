@@ -22,7 +22,7 @@ case class Move(
     val board = after.variant.finalizeBoard(
       after updateHistory { h =>
         h.copy(
-          lastMove = Some(toUci)
+          lastMove = Option(toUci)
         )
       },
       toUci,
@@ -30,21 +30,16 @@ case class Move(
       !situationBefore.color
     )
 
+    // Update position hashes last, only after updating the board
+    // todo isIrreversible for chushogi
     board updateHistory { h =>
-      // Update position hashes last, only after updating the board,
-      h.copy(positionHashes = Hash(Situation(board, !piece.color)) ++ h.positionHashes)
+      lazy val basePositionHashes =
+        if (h.positionHashes.isEmpty) Hash(situationBefore) else h.positionHashes
+      h.copy(positionHashes = Hash(Situation(board, !piece.color)) ++ basePositionHashes)
     }
   }
 
   def applyVariantEffect: Move = before.variant addVariantEffect this
-
-  def afterWithLastMove =
-    after.variant.finalizeBoard(
-      after.copy(history = after.history.withLastMove(toUci)),
-      toUci,
-      capture flatMap before.apply,
-      !situationBefore.color
-    )
 
   // does this move capture an opponent piece?
   def captures = capture.isDefined
@@ -52,18 +47,6 @@ case class Move(
   def promotes = promotion
 
   def color = piece.color
-
-  def withPromotion(op: Option[Role], promoting: Boolean): Option[Move] =
-    if (!promoting)
-      this.some
-    else {
-      op.fold(this.some) { p =>
-        for {
-          b2 <- after take dest
-          b3 <- b2.place(color - p, dest)
-        } yield copy(after = b3, promotion = true)
-      }
-    }
 
   def withAfter(newBoard: Board) = copy(after = newBoard)
 
