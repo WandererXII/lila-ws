@@ -29,7 +29,7 @@ object Forsyth {
 
   case class SituationPlus(situation: Situation, moveNumber: Int) {
 
-    def turns = moveNumber - (if ( (moveNumber % 2 == 1) == situation.color.sente) 1 else 0)
+    def turns = moveNumber - (if ((moveNumber % 2 == 1) == situation.color.sente) 1 else 0)
 
   }
 
@@ -76,7 +76,7 @@ object Forsyth {
       } else {
         Role.forsyth(p.toLower).map { role =>
           if (variant.handRoles.contains(role)) {
-            val toStore          = Math.min(total, 81)
+            val toStore = Math.min(total, 81)
             if (p.isUpper) sente = sente.store(role, toStore)
             else gote = gote.store(role, toStore)
           }
@@ -184,14 +184,6 @@ object Forsyth {
   def getColor(rawSource: String): Option[Color] =
     read(rawSource) { fen =>
       fen.split(' ').lift(1) flatMap (_.headOption) flatMap Color.apply
-    }
-
-  def getHands(rawSource: String): Option[Hands] =
-    read(rawSource) { fen =>
-      fen.split(' ').lift(2) map { hStr =>
-        // Standard for now, todo - don't use separate field for hand in tree, just use value from fen
-        readHands(Standard, hStr)
-      }
     }
 
   def truncateFen(fen: String) = fen split ' ' take 3 mkString " "

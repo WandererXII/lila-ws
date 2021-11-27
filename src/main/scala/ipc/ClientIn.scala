@@ -146,7 +146,7 @@ object ClientIn {
       dests: Map[shogi.Pos, List[shogi.Pos]],
       opening: Option[shogi.opening.FullOpening],
       drops: Option[List[shogi.Pos]],
-      crazyData: Option[Hands],
+      crazyData: Option[Hands], // todo remove
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =
@@ -170,7 +170,7 @@ object ClientIn {
               .add("drops" -> drops.map { drops =>
                 JsString(drops.map(_.uciKey).mkString)
               })
-              .add("crazy" -> crazyData)
+              .add("crazy" -> crazyData) // todo remove
           )
           .add("ch" -> chapterId)
       )

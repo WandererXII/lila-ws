@@ -100,7 +100,7 @@ object Shogi {
           FullOpeningDB findByFen fen
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
-      crazyData = game.situation.board.crazyData,
+      crazyData = game.situation.board.crazyData, // todo remove
       chapterId = chapterId
     )
   }
