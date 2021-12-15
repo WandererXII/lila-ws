@@ -6,9 +6,9 @@ lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
 val akkaVersion          = "2.6.6"
-val kamonVersion         = "2.1.12"
-val nettyVersion         = "4.1.65.Final"
-val reactivemongoVersion = "1.0.7"
+val kamonVersion         = "2.4.1"
+val nettyVersion         = "4.1.71.Final"
+val reactivemongoVersion = "1.0.8"
 
 scalaVersion := "2.13.6"
 
@@ -21,10 +21,10 @@ libraryDependencies += "io.netty"                    % "netty-codec-http"       
 libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
 libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"             % akkaVersion
 libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                   % akkaVersion
-libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.2"
-libraryDependencies += "joda-time"                   % "joda-time"                    % "2.10.12"
+libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.4"
+libraryDependencies += "joda-time"                   % "joda-time"                    % "2.10.13"
 libraryDependencies += "com.github.blemale"         %% "scaffeine"                    % "4.0.2" % "compile"
-libraryDependencies += "ch.qos.logback"              % "logback-classic"              % "1.2.3"
+libraryDependencies += "ch.qos.logback"              % "logback-classic"              % "1.2.7"
 libraryDependencies += "com.typesafe.play"          %% "play-json"                    % "2.9.2"
 libraryDependencies += "io.kamon"                   %% "kamon-core"                   % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-influxdb"               % kamonVersion
