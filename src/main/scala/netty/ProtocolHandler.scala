@@ -69,7 +69,14 @@ final private class ProtocolHandler(
   private def emitToChannel(channel: Channel): ClientEmit =
     in => {
       if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
-      else channel.writeAndFlush(new TextWebSocketFrame(in.write))
+      else if (in == ipc.ClientIn.RoundPingFrameNoFlush)
+        channel.write {
+          new PingWebSocketFrame(Unpooled copyLong System.currentTimeMillis())
+        }
+      else
+        channel.writeAndFlush {
+          new TextWebSocketFrame(in.write)
+        }
     }
 
   // cancel before the handshake was completed
