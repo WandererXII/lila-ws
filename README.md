@@ -1,3 +1,5 @@
+[![Test](https://github.com/WandererXII/lila-ws/actions/workflows/test.yml/badge.svg)](https://github.com/WandererXII/lila-ws/actions/workflows/test.yml)
+
 Handle incoming websocket traffic for [lishogi.org](https://lishogi.org).
 
 ```
