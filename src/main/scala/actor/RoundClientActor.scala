@@ -2,7 +2,6 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
-import com.typesafe.scalalogging.Logger
 import ipc._
 
 object RoundClientActor {
@@ -72,7 +71,7 @@ object RoundClientActor {
         msg match {
 
           case ClientOut.RoundPongFrame(lagMillis) =>
-            services.lag.trustedLag(req.userId, lagMillis)
+            services.lag.trustedLag(lagMillis)
             Behaviors.same
 
           case ClientCtrl.Broom(oldSeconds) =>
@@ -117,8 +116,7 @@ object RoundClientActor {
 
           case ClientOut.RoundMove(usi, blur, lag, ackId) =>
             fullId foreach { fid =>
-              if (state.player.isDefined && req.userId.exists(services.lag.monitorUserId))
-                clientIn(ClientIn.RoundPingFrameNoFlush)
+              // clientIn(ClientIn.RoundPingFrameNoFlush)
               clientIn(ClientIn.Ack(ackId))
               lilaIn.round(LilaIn.RoundMove(fid, usi, blur, lag))
             }
