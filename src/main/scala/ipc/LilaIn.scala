@@ -1,4 +1,5 @@
 package lila.ws
+
 package ipc
 
 import shogi.format.usi.Usi
@@ -109,7 +110,7 @@ object LilaIn {
   case class RoundMove(fullId: Game.FullId, usi: Usi, blur: Boolean, lag: MoveMetrics) extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
     def write =
-      s"r/move $fullId ${usi.usi} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
+      s"r/move $fullId ${usi.usi} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)} ${centis(lag.frameLag)}"
     override def critical = true
   }
 

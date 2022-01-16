@@ -63,13 +63,15 @@ object ClientOut {
 
   // round
 
-  case class RoundPlayerForward(payload: JsValue)                                     extends ClientOutRound
-  case class RoundMove(usi: Usi, blur: Boolean, lag: MoveMetrics, ackId: Option[Int]) extends ClientOutRound
-  case class RoundHold(mean: Int, sd: Int)                                            extends ClientOutRound
-  case class RoundBerserk(ackId: Option[Int])                                         extends ClientOutRound
-  case class RoundSelfReport(name: String)                                            extends ClientOutRound
-  case class RoundFlag(color: Color)                                                  extends ClientOutRound
-  case object RoundBye                                                                extends ClientOutRound
+  case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
+  case class RoundMove(usi: Usi, blur: Boolean, lag: ClientMoveMetrics, ackId: Option[Int])
+      extends ClientOutRound
+  case class RoundHold(mean: Int, sd: Int)    extends ClientOutRound
+  case class RoundBerserk(ackId: Option[Int]) extends ClientOutRound
+  case class RoundSelfReport(name: String)    extends ClientOutRound
+  case class RoundFlag(color: Color)          extends ClientOutRound
+  case object RoundBye                        extends ClientOutRound
+  case class RoundPongFrame(lagMillis: Int)   extends ClientOutRound
 
   // chat
 
@@ -187,9 +189,9 @@ object ClientOut {
 
   private def dataVariant(d: JsObject): Variant = Variant.orDefault(d str "variant" getOrElse "")
 
-  private def parseLag(d: JsObject) =
-    MoveMetrics(
-      d.int("l") orElse d.int("lag") map Centis.ofMillis,
+  private def parseMetrics(d: JsObject) =
+    ClientMoveMetrics(
+      d.int("l") map Centis.ofMillis,
       d.str("s") flatMap { v =>
         Try(Centis(Integer.parseInt(v, 36))).toOption
       }
