@@ -1,8 +1,7 @@
 package lila.ws
 package ipc
-
-import shogi.Hands
-import shogi.format.{ FEN, Uci, UciCharPair }
+ 
+import shogi.format.usi.{ Usi, UsiCharPair }
 import shogi.opening.FullOpening
 import play.api.libs.json._
 
@@ -37,14 +36,14 @@ object ClientIn {
     )
   }
 
-  case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN) extends ClientIn {
+  case class Sfen(gameId: Game.Id, lastUsi: Usi, sfen: shogi.format.forsyth.Sfen) extends ClientIn {
     def write =
       cliMsg(
-        "fen",
+        "sfen",
         Json.obj(
-          "id"  -> gameId.value,
-          "lm"  -> lastUci,
-          "fen" -> fen
+          "id"   -> gameId.value,
+          "lm"   -> lastUsi,
+          "sfen" -> sfen
         )
       )
   }
@@ -138,15 +137,12 @@ object ClientIn {
 
   case class Node(
       path: Path,
-      id: UciCharPair,
+      id: UsiCharPair,
       ply: Int,
-      move: shogi.format.Uci.WithSan,
-      fen: shogi.format.FEN,
+      usi: shogi.format.usi.Usi,
+      sfen: shogi.format.forsyth.Sfen,
       check: Boolean,
-      dests: Map[shogi.Pos, List[shogi.Pos]],
       opening: Option[shogi.opening.FullOpening],
-      drops: Option[List[shogi.Pos]],
-      crazyData: Option[Hands], // todo remove
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =
@@ -158,39 +154,14 @@ object ClientIn {
             "node" -> Json
               .obj(
                 "ply"      -> ply,
-                "fen"      -> fen,
+                "sfen"     -> sfen,
                 "id"       -> id,
-                "uci"      -> move.uci,
-                "san"      -> move.san,
-                "dests"    -> dests,
+                "usi"      -> usi,
                 "children" -> JsArray()
               )
               .add("opening" -> opening)
               .add("check" -> check)
-              .add("drops" -> drops.map { drops =>
-                JsString(drops.map(_.uciKey).mkString)
-              })
-              .add("crazy" -> crazyData) // todo remove
           )
-          .add("ch" -> chapterId)
-      )
-  }
-
-  case class Dests(
-      path: Path,
-      dests: String,
-      opening: Option[shogi.opening.FullOpening],
-      chapterId: Option[ChapterId]
-  ) extends ClientIn {
-    def write =
-      cliMsg(
-        "dests",
-        Json
-          .obj(
-            "dests" -> dests,
-            "path"  -> path
-          )
-          .add("opening" -> opening)
           .add("ch" -> chapterId)
       )
   }
@@ -216,7 +187,6 @@ object ClientIn {
   ) extends HasVersion {
     val full         = Payload(JsonString(cliMsg(tpe, data, version)))
     lazy val skip    = Payload(JsonString(s"""{"v":$version}"""))
-    lazy val noDests = Payload(JsonString(destsRemover.replaceAllIn(full.write, "")))
   }
   def roundTourStanding(data: JsonString) = payload("tourStanding", data)
 
@@ -263,8 +233,6 @@ object ClientIn {
   case class StormKey(signed: String) extends ClientIn {
     def write = cliMsg("sk1", signed)
   }
-
-  private val destsRemover = ""","dests":\{[^\}]+}""".r
 
   private def cliMsg[A: Writes](t: String, data: A): String =
     Json stringify Json.obj(

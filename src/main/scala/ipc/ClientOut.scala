@@ -1,9 +1,10 @@
 package lila.ws
 package ipc
 
-import shogi.format.{ FEN, Uci }
+import shogi.format.forsyth.Sfen
+import shogi.format.usi.Usi
 import shogi.variant.Variant
-import shogi.{ Centis, Color, MoveMetrics, Pos }
+import shogi.{ Centis, Color, MoveMetrics }
 import play.api.libs.json._
 import scala.util.{ Success, Try }
 
@@ -28,34 +29,15 @@ object ClientOut {
 
   case object FollowingOnline extends ClientOutSite
 
-  case class Opening(variant: Variant, path: Path, fen: FEN) extends ClientOutSite
+  case class Opening(variant: Variant, path: Path, sfen: Sfen) extends ClientOutSite
 
-  case class AnaMove(
-      orig: Pos,
-      dest: Pos,
-      fen: FEN,
-      path: Path,
-      variant: Variant,
-      chapterId: Option[ChapterId],
-      promotion: Boolean,
-      payload: JsObject
-  ) extends ClientOutSite
-
-  case class AnaDrop(
-      role: shogi.Role,
-      pos: Pos,
-      fen: FEN,
+  case class AnaUsi(
+      usi: Usi,
+      sfen: Sfen,
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId],
       payload: JsObject
-  ) extends ClientOutSite
-
-  case class AnaDests(
-      fen: FEN,
-      path: Path,
-      variant: Variant,
-      chapterId: Option[ChapterId]
   ) extends ClientOutSite
 
   case class MsgType(dest: User.ID) extends ClientOutSite
@@ -82,7 +64,7 @@ object ClientOut {
   // round
 
   case class RoundPlayerForward(payload: JsValue)                                     extends ClientOutRound
-  case class RoundMove(uci: Uci, blur: Boolean, lag: MoveMetrics, ackId: Option[Int]) extends ClientOutRound
+  case class RoundMove(usi: Usi, blur: Boolean, lag: MoveMetrics, ackId: Option[Int]) extends ClientOutRound
   case class RoundHold(mean: Int, sd: Int)                                            extends ClientOutRound
   case class RoundBerserk(ackId: Option[Int])                                         extends ClientOutRound
   case class RoundSelfReport(name: String)                                            extends ClientOutRound
@@ -127,38 +109,18 @@ object ClientOut {
               for {
                 d    <- o obj "d"
                 path <- d str "path"
-                fen  <- d str "fen"
+                sfen <- d str "sfen"
                 variant = dataVariant(d)
-              } yield Opening(variant, Path(path), FEN(fen))
-            case "anaMove" =>
+              } yield Opening(variant, Path(path), Sfen(sfen))
+            case "anaUsi" =>
               for {
                 d    <- o obj "d"
-                orig <- d str "orig" flatMap Pos.fromKey
-                dest <- d str "dest" flatMap Pos.fromKey
+                usi  <- d str "usi" flatMap Usi.apply
                 path <- d str "path"
-                fen  <- d str "fen"
+                sfen <- d str "sfen"
                 variant   = dataVariant(d)
                 chapterId = d str "ch" map ChapterId.apply
-                promotion = (d \ "promotion").as[Boolean]
-              } yield AnaMove(orig, dest, FEN(fen), Path(path), variant, chapterId, promotion, o)
-            case "anaDrop" =>
-              for {
-                d    <- o obj "d"
-                role <- d str "role" flatMap shogi.Role.allByName.get
-                pos  <- d str "pos" flatMap Pos.fromKey
-                path <- d str "path"
-                fen  <- d str "fen"
-                variant   = dataVariant(d)
-                chapterId = d str "ch" map ChapterId.apply
-              } yield AnaDrop(role, pos, FEN(fen), Path(path), variant, chapterId, o)
-            case "anaDests" =>
-              for {
-                d    <- o obj "d"
-                path <- d str "path"
-                fen  <- d str "fen"
-                variant   = dataVariant(d)
-                chapterId = d str "ch" map ChapterId.apply
-              } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
+              } yield AnaUsi(usi, Sfen(sfen), Path(path), variant, chapterId, o)
             case "evalGet" | "evalPut" => Some(SiteForward(o))
             case "msgType"             => o str "d" map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))
@@ -175,22 +137,13 @@ object ClientOut {
                 "requestAnalysis" | "invite" | "relaySync" | "setTopics" =>
               Some(StudyForward(o))
             // round
-            case "move" =>
+            case "usi" =>
               for {
                 d    <- o obj "d"
-                move <- d str "u" flatMap Uci.Move.apply orElse parseOldMove(d)
+                usi  <- d str "u" flatMap Usi.apply
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(move, blur, parseLag(d), ackId)
-            case "drop" =>
-              for {
-                d    <- o obj "d"
-                role <- d str "role"
-                pos  <- d str "pos"
-                drop <- Uci.Drop.fromStrings(role, pos)
-                blur  = d int "b" contains 1
-                ackId = d int "a"
-              } yield RoundMove(drop, blur, parseLag(d), ackId)
+              } yield RoundMove(usi, blur, parseLag(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
@@ -233,15 +186,6 @@ object ClientOut {
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 
   private def dataVariant(d: JsObject): Variant = Variant.orDefault(d str "variant" getOrElse "")
-
-  private def parseOldMove(d: JsObject) = // todo
-    for {
-      orig <- d str "from"
-      dest <- d str "to"
-      prom   = (d \ "promotion").as[Boolean]
-      umoves = orig + dest + { if (prom) "+" else "" }
-      move <- Uci.Move(umoves)
-    } yield move
 
   private def parseLag(d: JsObject) =
     MoveMetrics(

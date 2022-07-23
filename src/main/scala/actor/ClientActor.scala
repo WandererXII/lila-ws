@@ -23,7 +23,7 @@ object ClientActor {
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     LilaWsServer.connections.decrementAndGet
-    if (state.watchedGames.nonEmpty) Fens.unwatch(state.watchedGames, ctx.self)
+    if (state.watchedGames.nonEmpty) Sfens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
     req.user foreach { user =>
       users.disconnect(user, ctx.self)
@@ -68,7 +68,7 @@ object ClientActor {
         sitePing(state, deps, msg)
 
       case ClientOut.Watch(gameIds) =>
-        Fens.watch(gameIds, ctx.self)
+        Sfens.watch(gameIds, ctx.self)
         state.copy(watchedGames = state.watchedGames ++ gameIds)
 
       case msg: ClientOut if deps.req.flag.contains(Flag.api) =>
@@ -91,16 +91,8 @@ object ClientActor {
         Shogi(opening) foreach clientIn
         state
 
-      case anaMove: ClientOut.AnaMove =>
-        clientIn(Shogi(anaMove))
-        state
-
-      case anaDrop: ClientOut.AnaDrop =>
-        clientIn(Shogi(anaDrop))
-        state
-
-      case anaDests: ClientOut.AnaDests =>
-        clientIn(Shogi(anaDests))
+      case anaUsi: ClientOut.AnaUsi =>
+        clientIn(Shogi(anaUsi))
         state
 
       case ClientOut.MsgType(dest) =>

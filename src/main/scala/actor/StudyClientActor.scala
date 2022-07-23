@@ -54,14 +54,9 @@ object StudyClientActor {
             forward(payload)
             Behaviors.same
 
-          case anaMove: ClientOut.AnaMove =>
-            clientIn(Shogi(anaMove))
-            forward(anaMove.payload)
-            Behaviors.same
-
-          case anaDrop: ClientOut.AnaDrop =>
-            clientIn(Shogi(anaDrop))
-            forward(anaDrop.payload)
+          case anaUsi: ClientOut.AnaUsi =>
+            clientIn(Shogi(anaUsi))
+            forward(anaUsi.payload)
             Behaviors.same
 
           case ClientOut.PalantirPing =>

@@ -56,7 +56,6 @@ object RoundClientActor {
       (msg.flags.watcher && state.player.isDefined) ||
       msg.flags.player.exists(c => state.player.fold(true)(_.color != c))
     ) msg.skip
-    else if (msg.flags.moveBy.exists(c => state.player.fold(true)(_.color == c))) msg.noDests
     else msg.full
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
@@ -112,10 +111,10 @@ object RoundClientActor {
             clientIn(in)
             Behaviors.same
 
-          case ClientOut.RoundMove(uci, blur, lag, ackId) =>
+          case ClientOut.RoundMove(usi, blur, lag, ackId) =>
             fullId foreach { fid =>
               clientIn(ClientIn.Ack(ackId))
-              lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
+              lilaIn.round(LilaIn.RoundMove(fid, usi, blur, lag))
             }
             Behaviors.same
 

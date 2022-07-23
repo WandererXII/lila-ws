@@ -44,7 +44,7 @@ final class Monitor(
     crowdRoomSize.update(services.roomCrowd.size.toDouble)
     crowdRoundSize.update(rounds.toDouble)
     usersSize.update(services.users.size.toDouble)
-    watchSize.update(Fens.size.toDouble)
+    watchSize.update(Sfens.size.toDouble)
     busSize.update(Bus.size.toDouble)
     busAllSize.update(Bus.sizeOf(_.all).toDouble)
   }
@@ -82,7 +82,6 @@ object Monitor {
   val busAllSize = Kamon.gauge("bus.all.size").withoutTags()
 
   val shogiMoveTime = Kamon.timer("shogi.analysis.move.time").withoutTags()
-  val shogiDestTime = Kamon.timer("shogi.analysis.dest.time").withoutTags()
 
   def websocketError(name: String) =
     Kamon.counter("websocket.error").withTag("name", name).increment()

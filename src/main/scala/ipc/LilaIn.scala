@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import shogi.format.Uci
+import shogi.format.usi.Usi
 import shogi.{ Centis, Color, MoveMetrics }
 import play.api.libs.json._
 
@@ -106,10 +106,10 @@ object LilaIn {
     def write = s"r/do $fullId ${Json.stringify(payload)}"
   }
 
-  case class RoundMove(fullId: Game.FullId, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round {
+  case class RoundMove(fullId: Game.FullId, usi: Usi, blur: Boolean, lag: MoveMetrics) extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
     def write =
-      s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
+      s"r/move $fullId ${usi.usi} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
     override def critical = true
   }
 
