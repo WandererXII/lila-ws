@@ -1,6 +1,7 @@
 package lila.ws
 package netty
 
+import io.netty.buffer.Unpooled
 import io.netty.channel._
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._

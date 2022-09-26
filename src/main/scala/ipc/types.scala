@@ -1,8 +1,8 @@
 package lila.ws
 package ipc
 
-import chess.MoveMetrics
-import chess.Centis
+import shogi.MoveMetrics
+import shogi.Centis
 
 trait ClientMsg
 

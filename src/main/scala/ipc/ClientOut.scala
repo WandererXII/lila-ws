@@ -4,7 +4,7 @@ package ipc
 import shogi.format.forsyth.Sfen
 import shogi.format.usi.Usi
 import shogi.variant.Variant
-import shogi.{ Centis, Color, MoveMetrics }
+import shogi.{ Centis, Color }
 import play.api.libs.json._
 import scala.util.{ Success, Try }
 
@@ -145,7 +145,7 @@ object ClientOut {
                 usi  <- d str "u" flatMap Usi.apply
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(usi, blur, parseLag(d), ackId)
+              } yield RoundMove(usi, blur, parseMetrics(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"

@@ -3,7 +3,7 @@ package lila.ws
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
 import ipc._
-import chess.Centis
+import shogi.Centis
 
 object RoundClientActor {
 

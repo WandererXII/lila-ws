@@ -6,6 +6,7 @@ import kamon.Kamon
 import kamon.tag.TagSet
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import java.util.concurrent.TimeUnit
 
 final class Monitor(
     config: Config,

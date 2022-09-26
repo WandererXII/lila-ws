@@ -139,6 +139,14 @@ object RoomId {
 
 case class ReqId(value: Int) extends AnyVal with IntValue
 
+case class UptimeMillis(millis: Long) extends AnyVal {
+  def toNow: Long = UptimeMillis.make.millis - millis
+}
+
+object UptimeMillis {
+  def make = UptimeMillis(System.currentTimeMillis() - util.Util.startedAtMillis)
+}
+
 case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])
 
 case class RoundEventFlags(
