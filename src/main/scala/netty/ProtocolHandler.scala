@@ -1,6 +1,7 @@
 package lila.ws
 package netty
 
+import io.netty.buffer.Unpooled
 import io.netty.channel._
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
@@ -69,7 +70,14 @@ final private class ProtocolHandler(
   private def emitToChannel(channel: Channel): ClientEmit =
     in => {
       if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
-      else channel.writeAndFlush(new TextWebSocketFrame(in.write))
+      else if (in == ipc.ClientIn.RoundPingFrameNoFlush)
+        channel.write {
+          new PingWebSocketFrame(Unpooled copyLong System.currentTimeMillis())
+        }
+      else
+        channel.writeAndFlush {
+          new TextWebSocketFrame(in.write)
+        }
     }
 
   // cancel before the handshake was completed

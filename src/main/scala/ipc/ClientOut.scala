@@ -4,7 +4,7 @@ package ipc
 import shogi.format.forsyth.Sfen
 import shogi.format.usi.Usi
 import shogi.variant.Variant
-import shogi.{ Centis, Color, MoveMetrics }
+import shogi.{ Centis, Color }
 import play.api.libs.json._
 import scala.util.{ Success, Try }
 
@@ -63,13 +63,15 @@ object ClientOut {
 
   // round
 
-  case class RoundPlayerForward(payload: JsValue)                                     extends ClientOutRound
-  case class RoundMove(usi: Usi, blur: Boolean, lag: MoveMetrics, ackId: Option[Int]) extends ClientOutRound
-  case class RoundHold(mean: Int, sd: Int)                                            extends ClientOutRound
-  case class RoundBerserk(ackId: Option[Int])                                         extends ClientOutRound
-  case class RoundSelfReport(name: String)                                            extends ClientOutRound
-  case class RoundFlag(color: Color)                                                  extends ClientOutRound
-  case object RoundBye                                                                extends ClientOutRound
+  case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
+  case class RoundMove(usi: Usi, blur: Boolean, lag: ClientMoveMetrics, ackId: Option[Int])
+      extends ClientOutRound
+  case class RoundHold(mean: Int, sd: Int)    extends ClientOutRound
+  case class RoundBerserk(ackId: Option[Int]) extends ClientOutRound
+  case class RoundSelfReport(name: String)    extends ClientOutRound
+  case class RoundFlag(color: Color)          extends ClientOutRound
+  case object RoundBye                        extends ClientOutRound
+  case class RoundPongFrame(lagMillis: Int)   extends ClientOutRound
 
   // chat
 
@@ -143,7 +145,7 @@ object ClientOut {
                 usi  <- d str "u" flatMap Usi.apply
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(usi, blur, parseLag(d), ackId)
+              } yield RoundMove(usi, blur, parseMetrics(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
@@ -187,9 +189,9 @@ object ClientOut {
 
   private def dataVariant(d: JsObject): Variant = Variant.orDefault(d str "variant" getOrElse "")
 
-  private def parseLag(d: JsObject) =
-    MoveMetrics(
-      d.int("l") orElse d.int("lag") map Centis.ofMillis,
+  private def parseMetrics(d: JsObject) =
+    ClientMoveMetrics(
+      d.int("l") map Centis.ofMillis,
       d.str("s") flatMap { v =>
         Try(Centis(Integer.parseInt(v, 36))).toOption
       }

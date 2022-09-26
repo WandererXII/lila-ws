@@ -6,6 +6,7 @@ import kamon.Kamon
 import kamon.tag.TagSet
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import java.util.concurrent.TimeUnit
 
 final class Monitor(
     config: Config,
@@ -114,6 +115,25 @@ object Monitor {
         .counter("redis.out.drop")
         .withTags(TagSet.from(Map("channel" -> chan, "path" -> path)))
         .increment()
+  }
+
+  object ping {
+
+    private def apply(chan: String) = Kamon.timer("ping").withTag("chan", chan)
+
+    def record(chan: String, at: UptimeMillis): Int = {
+      val millis = at.toNow
+      apply(chan).record(millis, TimeUnit.MILLISECONDS)
+      millis.toInt
+    }
+  }
+
+  object lag {
+
+    private val frameLagHistogram = Kamon.timer("round.lag.frame").withoutTags()
+
+    def roundFrameLag(millis: Int) =
+      if (millis > 1 && millis < 99999) frameLagHistogram.record(millis.toLong, TimeUnit.MILLISECONDS)
   }
 
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {

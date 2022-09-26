@@ -21,4 +21,6 @@ object Util {
       new scala.util.Random(local).shuffle(xs)
   
   }
+
+  val startedAtMillis = System.currentTimeMillis()
 }

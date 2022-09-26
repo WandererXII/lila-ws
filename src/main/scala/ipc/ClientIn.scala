@@ -188,6 +188,9 @@ object ClientIn {
     val full         = Payload(JsonString(cliMsg(tpe, data, version)))
     lazy val skip    = Payload(JsonString(s"""{"v":$version}"""))
   }
+  case object RoundPingFrameNoFlush extends ClientIn {
+    val write = "" // not actually sent
+  }
   def roundTourStanding(data: JsonString) = payload("tourStanding", data)
 
   case class Palantir(userIds: Iterable[User.ID]) extends ClientIn {
