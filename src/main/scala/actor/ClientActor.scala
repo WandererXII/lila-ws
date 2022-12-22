@@ -115,7 +115,7 @@ object ClientActor {
         clientIn(ClientIn.StormKey(deps.services.stormSign(key, pad)))
         state
 
-      case ClientOut.Ignore =>
+      case ClientOut.Ignore | ClientOut.Unexpected(_) | ClientOut.WrongHole =>
         state
     }
   }

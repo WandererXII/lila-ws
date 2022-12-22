@@ -2,7 +2,7 @@ package lila.ws
 
 import akka.actor.typed.ActorRef
 import shogi.format.forsyth.Sfen
-import shogi.format.usi.Usi
+import shogi.format.usi.{ UciToUsi, Usi }
 import java.util.concurrent.ConcurrentHashMap
 
 import ipc._
@@ -51,7 +51,7 @@ object Sfens {
       (_, watched) => {
         json.value match {
           case MoveRegex(usiS, sfenS) =>
-            Usi(usiS).fold(watched) { lastUsi =>
+            Usi(usiS).orElse(UciToUsi(usiS)).fold(watched) { lastUsi =>
               val sfen = Sfen(sfenS)
               val msg = ClientIn.Sfen(gameId, lastUsi, sfen)
               watched.clients foreach { _ ! msg }

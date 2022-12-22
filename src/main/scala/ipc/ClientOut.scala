@@ -2,7 +2,7 @@ package lila.ws
 package ipc
 
 import shogi.format.forsyth.Sfen
-import shogi.format.usi.Usi
+import shogi.format.usi.{ UciToUsi, Usi }
 import shogi.variant.Variant
 import shogi.{ Centis, Color, MoveMetrics }
 import play.api.libs.json._
@@ -115,7 +115,7 @@ object ClientOut {
             case "anaUsi" =>
               for {
                 d    <- o obj "d"
-                usi  <- d str "usi" flatMap Usi.apply
+                usi  <- d str "usi" flatMap { u => Usi.apply(u).orElse(UciToUsi.apply(u)) }
                 path <- d str "path"
                 sfen <- d str "sfen"
                 variant   = dataVariant(d)
@@ -140,7 +140,7 @@ object ClientOut {
             case "usi" =>
               for {
                 d    <- o obj "d"
-                usi  <- d str "u" flatMap Usi.apply
+                usi  <- d str "u" flatMap { u => Usi.apply(u).orElse(UciToUsi.apply(u))}
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(usi, blur, parseLag(d), ackId)

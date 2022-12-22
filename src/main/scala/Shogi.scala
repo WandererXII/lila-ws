@@ -69,7 +69,7 @@ object Shogi {
     implicit val pathWrite        = Writes[Path] { path => JsString(path.value) }
     implicit val usiWrite         = Writes[Usi] { usi => JsString(usi.usi) }
     implicit val usiCharPairWrite = Writes[UsiCharPair] { ucp => JsString(ucp.toString) }
-    implicit val posWrite         = Writes[Pos] { pos => JsString(pos.usiKey) }
+    implicit val posWrite         = Writes[Pos] { pos => JsString(pos.key) }
     implicit val chapterIdWrite   = Writes[ChapterId] { ch => JsString(ch.value) }
     implicit val openingWrite = Writes[FullOpening] { o =>
       Json.obj(
