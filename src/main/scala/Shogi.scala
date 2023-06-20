@@ -6,9 +6,7 @@ import play.api.libs.json._
 
 import shogi.format.forsyth.Sfen
 import shogi.format.usi.{ Usi, UsiCharPair }
-import shogi.opening.{ FullOpening, FullOpeningDB }
 import shogi.Pos
-import shogi.variant.Variant
 import com.typesafe.scalalogging.Logger
 
 import ipc._
@@ -21,8 +19,9 @@ object Shogi {
     Monitor.time(_.shogiMoveTime) {
       try {
         shogi
-          .Game(req.variant.some, Some(req.sfen))(req.usi)
-          .toOption map { game => {
+          .Game(req.sfen.some, req.variant)(req.usi)
+          .toOption map { game =>
+          {
 
             makeNode(game, req.usi, req.path, req.chapterId)
           }
@@ -35,20 +34,13 @@ object Shogi {
     }
   }
 
-  def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
-    if (Variant.openingSensibleVariants(req.variant))
-      FullOpeningDB findBySfen req.sfen map {
-        ClientIn.Opening(req.path, _)
-      }
-    else None
-
   private def makeNode(
       game: shogi.Game,
       usi: Usi,
       path: Path,
       chapterId: Option[ChapterId]
   ): ClientIn.Node = {
-    val sfen     = game.toSfen
+    val sfen = game.toSfen
     ClientIn.Node(
       path = path,
       id = UsiCharPair(usi, game.variant),
@@ -56,10 +48,6 @@ object Shogi {
       usi = usi,
       sfen = sfen,
       check = game.situation.check,
-      opening =
-        if (game.plies <= 30 && Variant.openingSensibleVariants(game.variant))
-          FullOpeningDB findBySfen sfen
-        else None,
       chapterId = chapterId
     )
   }
@@ -71,11 +59,5 @@ object Shogi {
     implicit val usiCharPairWrite = Writes[UsiCharPair] { ucp => JsString(ucp.toString) }
     implicit val posWrite         = Writes[Pos] { pos => JsString(pos.key) }
     implicit val chapterIdWrite   = Writes[ChapterId] { ch => JsString(ch.value) }
-    implicit val openingWrite = Writes[FullOpening] { o =>
-      Json.obj(
-        "japanese"  -> o.japanese,
-        "english" -> o.english
-      )
-    }
   }
 }

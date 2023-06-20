@@ -29,8 +29,6 @@ object ClientOut {
 
   case object FollowingOnline extends ClientOutSite
 
-  case class Opening(variant: Variant, path: Path, sfen: Sfen) extends ClientOutSite
-
   case class AnaUsi(
       usi: Usi,
       sfen: Sfen,
@@ -105,13 +103,6 @@ object ClientOut {
             case "moveLat"           => Some(MoveLat)
             case "notified"          => Some(Notified)
             case "following_onlines" => Some(FollowingOnline)
-            case "opening" =>
-              for {
-                d    <- o obj "d"
-                path <- d str "path"
-                sfen <- d str "sfen"
-                variant = dataVariant(d)
-              } yield Opening(variant, Path(path), Sfen(sfen))
             case "anaUsi" =>
               for {
                 d    <- o obj "d"
@@ -134,13 +125,13 @@ object ClientOut {
                 "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" |
                 "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" | "editStudy" |
                 "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" | "explorerGame" |
-                "requestAnalysis" | "invite" | "relaySync" | "setTopics" =>
+                "requestAnalysis" | "invite" | "relaySync" | "setTopics" | "rematch" =>
               Some(StudyForward(o))
             // round
             case "usi" =>
               for {
-                d    <- o obj "d"
-                usi  <- d str "u" flatMap { u => Usi.apply(u).orElse(UciToUsi.apply(u))}
+                d   <- o obj "d"
+                usi <- d str "u" flatMap { u => Usi.apply(u).orElse(UciToUsi.apply(u)) }
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(usi, blur, parseLag(d), ackId)

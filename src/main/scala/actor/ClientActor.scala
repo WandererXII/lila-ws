@@ -87,10 +87,6 @@ object ClientActor {
         req.userId foreach { services.friends.start(_, clientIn) }
         state
 
-      case opening: ClientOut.Opening =>
-        Shogi(opening) foreach clientIn
-        state
-
       case anaUsi: ClientOut.AnaUsi =>
         clientIn(Shogi(anaUsi))
         state

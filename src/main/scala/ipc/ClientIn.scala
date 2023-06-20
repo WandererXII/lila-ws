@@ -1,8 +1,7 @@
 package lila.ws
 package ipc
- 
+
 import shogi.format.usi.{ Usi, UsiCharPair }
-import shogi.opening.FullOpening
 import play.api.libs.json._
 
 import lila.ws.util.LilaJsObject.augment
@@ -120,17 +119,6 @@ object ClientIn {
 
   def tvSelect(data: JsonString) = payload("tvSelect", data)
 
-  case class Opening(path: Path, opening: FullOpening) extends ClientIn {
-    def write =
-      cliMsg(
-        "opening",
-        Json.obj(
-          "path"    -> path,
-          "opening" -> opening
-        )
-      )
-  }
-
   case object StepFailure extends ClientIn {
     def write = cliMsg("stepFailure")
   }
@@ -142,7 +130,6 @@ object ClientIn {
       usi: shogi.format.usi.Usi,
       sfen: shogi.format.forsyth.Sfen,
       check: Boolean,
-      opening: Option[shogi.opening.FullOpening],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =
@@ -159,7 +146,6 @@ object ClientIn {
                 "usi"      -> usi,
                 "children" -> JsArray()
               )
-              .add("opening" -> opening)
               .add("check" -> check)
           )
           .add("ch" -> chapterId)
@@ -185,8 +171,8 @@ object ClientIn {
       tpe: String,
       data: JsonString
   ) extends HasVersion {
-    val full         = Payload(JsonString(cliMsg(tpe, data, version)))
-    lazy val skip    = Payload(JsonString(s"""{"v":$version}"""))
+    val full      = Payload(JsonString(cliMsg(tpe, data, version)))
+    lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
   }
   def roundTourStanding(data: JsonString) = payload("tourStanding", data)
 
