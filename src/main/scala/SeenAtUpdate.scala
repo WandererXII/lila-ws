@@ -50,7 +50,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
                 BSONDocument("$set" -> BSONDocument("seenAt" -> now))
               )
             )
-          else Future successful ()
+          else Future successful ({})
       } yield ()
     }
 

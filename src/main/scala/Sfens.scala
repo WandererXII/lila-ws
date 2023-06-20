@@ -53,7 +53,7 @@ object Sfens {
           case MoveRegex(usiS, sfenS) =>
             Usi(usiS).orElse(UciToUsi(usiS)).fold(watched) { lastUsi =>
               val sfen = Sfen(sfenS)
-              val msg = ClientIn.Sfen(gameId, lastUsi, sfen)
+              val msg  = ClientIn.Sfen(gameId, lastUsi, sfen)
               watched.clients foreach { _ ! msg }
               watched.copy(position = Some(Position(lastUsi, sfen)))
             }
