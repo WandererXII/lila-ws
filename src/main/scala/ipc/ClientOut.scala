@@ -125,7 +125,7 @@ object ClientOut {
                 "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" |
                 "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" | "editStudy" |
                 "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" | "explorerGame" |
-                "requestAnalysis" | "invite" | "relaySync" | "setTopics" | "rematch" =>
+                "requestAnalysis" | "invite" | "relaySync" | "setTopics" | "rematch" | "unbindFromGame" =>
               Some(StudyForward(o))
             // round
             case "usi" =>
