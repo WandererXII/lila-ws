@@ -2,7 +2,7 @@ package lila.ws
 package ipc
 
 import shogi.format.usi.Usi
-import shogi.{ Centis, Color, MoveMetrics }
+import shogi.{ Centis, Color, LagMetrics }
 import play.api.libs.json._
 
 sealed trait LilaIn {
@@ -106,7 +106,7 @@ object LilaIn {
     def write = s"r/do $fullId ${Json.stringify(payload)}"
   }
 
-  case class RoundMove(fullId: Game.FullId, usi: Usi, blur: Boolean, lag: MoveMetrics) extends Round {
+  case class RoundMove(fullId: Game.FullId, usi: Usi, blur: Boolean, lag: LagMetrics) extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
     def write =
       s"r/move $fullId ${usi.usi} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"

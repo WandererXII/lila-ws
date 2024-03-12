@@ -4,7 +4,7 @@ package ipc
 import shogi.format.forsyth.Sfen
 import shogi.format.usi.{ UciToUsi, Usi }
 import shogi.variant.Variant
-import shogi.{ Centis, Color, MoveMetrics }
+import shogi.{ Centis, Color, LagMetrics }
 import play.api.libs.json._
 import scala.util.{ Success, Try }
 
@@ -61,13 +61,13 @@ object ClientOut {
 
   // round
 
-  case class RoundPlayerForward(payload: JsValue)                                     extends ClientOutRound
-  case class RoundMove(usi: Usi, blur: Boolean, lag: MoveMetrics, ackId: Option[Int]) extends ClientOutRound
-  case class RoundHold(mean: Int, sd: Int)                                            extends ClientOutRound
-  case class RoundBerserk(ackId: Option[Int])                                         extends ClientOutRound
-  case class RoundSelfReport(name: String)                                            extends ClientOutRound
-  case class RoundFlag(color: Color)                                                  extends ClientOutRound
-  case object RoundBye                                                                extends ClientOutRound
+  case class RoundPlayerForward(payload: JsValue)                                    extends ClientOutRound
+  case class RoundMove(usi: Usi, blur: Boolean, lag: LagMetrics, ackId: Option[Int]) extends ClientOutRound
+  case class RoundHold(mean: Int, sd: Int)                                           extends ClientOutRound
+  case class RoundBerserk(ackId: Option[Int])                                        extends ClientOutRound
+  case class RoundSelfReport(name: String)                                           extends ClientOutRound
+  case class RoundFlag(color: Color)                                                 extends ClientOutRound
+  case object RoundBye                                                               extends ClientOutRound
 
   // chat
 
@@ -117,15 +117,14 @@ object ClientOut {
             case "msgSend" | "msgRead" => Some(UserForward(o))
             // lobby
             case "idle" => o boolean "d" map { Idle(_, o) }
-            case "join" | "cancel" | "joinSeek" | "cancelSeek" | "poolIn" | "poolOut" | "hookIn" |
-                "hookOut" =>
+            case "join" | "cancel" | "joinSeek" | "cancelSeek" | "hookIn" | "hookOut" =>
               Some(LobbyForward(o))
             // study
             case "like" | "setPath" | "deleteNode" | "promote" | "forceVariation" | "setRole" | "kick" |
                 "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" |
                 "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" | "editStudy" |
                 "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" | "explorerGame" |
-                "requestAnalysis" | "invite" | "relaySync" | "setTopics" | "rematch" | "unbindFromGame" =>
+                "requestAnalysis" | "invite" | "setTopics" | "rematch" | "unbindFromGame" =>
               Some(StudyForward(o))
             // round
             case "usi" =>
@@ -147,7 +146,8 @@ object ClientOut {
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
             case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
-                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" =>
+                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" |
+                "pause-yes" | "pause-no" | "resume-yes" | "resume-no" =>
               Some(RoundPlayerForward(o))
             // chat
             case "talk" => o str "d" map { ChatSay.apply }
@@ -179,7 +179,7 @@ object ClientOut {
   private def dataVariant(d: JsObject): Variant = Variant.orDefault(d str "variant" getOrElse "")
 
   private def parseLag(d: JsObject) =
-    MoveMetrics(
+    LagMetrics(
       d.int("l") orElse d.int("lag") map Centis.ofMillis,
       d.str("s") flatMap { v =>
         Try(Centis(Integer.parseInt(v, 36))).toOption
