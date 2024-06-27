@@ -109,7 +109,7 @@ object LilaIn {
   case class RoundMove(fullId: Game.FullId, usi: Usi, blur: Boolean, lag: LagMetrics) extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
     def write =
-      s"r/move $fullId ${usi.usi} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
+      s"r/move $fullId ${usi.usi} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientStepTime)}"
     override def critical = true
   }
 
