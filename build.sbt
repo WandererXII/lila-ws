@@ -7,15 +7,15 @@ lazy val root = (project in file("."))
 
 val akkaVersion          = "2.6.21"
 val kamonVersion         = "2.4.8"
-val nettyVersion         = "4.1.106.Final"
+val nettyVersion         = "4.1.111.Final"
 val reactivemongoVersion = "1.0.10"
 
-scalaVersion := "2.13.12"
+scalaVersion := "2.13.14"
 
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"           % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-linux-x86-64"
-libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "6.3.1.RELEASE"
+libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "6.3.2.RELEASE"
 libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
@@ -25,14 +25,14 @@ libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"          
 libraryDependencies += "joda-time"                   % "joda-time"                    % "2.12.7"
 libraryDependencies += "com.github.blemale"         %% "scaffeine"                    % "5.2.1" % "compile"
 libraryDependencies += "ch.qos.logback"              % "logback-classic"              % "1.4.14"
-libraryDependencies += "com.typesafe.play"          %% "play-json"                    % "2.10.4"
+libraryDependencies += "com.typesafe.play"          %% "play-json"                    % "2.10.6"
 libraryDependencies += "io.kamon"                   %% "kamon-core"                   % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-influxdb"               % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"         % kamonVersion
 libraryDependencies += "com.softwaremill.macwire"   %% "macros"                       % "2.5.9" % "provided"
 libraryDependencies += "com.roundeights"            %% "hasher"                       % "1.2.1"
 libraryDependencies += "com.github.ornicar"         %% "scalalib"                     % "7.0.2"
-libraryDependencies += "io.github.WandererXII"      %% "scalashogi"                   % "12.0.0"
+libraryDependencies += "io.github.WandererXII"      %% "scalashogi"                   % "12.1.1"
 
 resolvers ++= Seq(
   "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
