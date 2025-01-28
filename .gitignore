@@ -8,3 +8,5 @@ RUNNING_PID
 .metals
 .vscode
 .bsp
+# for custom plugins or something
+local.sbt
