@@ -1,12 +1,13 @@
 package lila.ws
 
-import akka.actor.typed.Scheduler
 import java.util.concurrent.ConcurrentHashMap
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
-import ipc._
+import akka.actor.typed.Scheduler
+
+import lila.ws.ipc._
 
 final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
@@ -29,7 +30,7 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
           Set(client)
         case (_, clients) =>
           clients + client
-      }
+      },
     )
 
   def disconnect(user: User, client: Client): Unit =
@@ -41,7 +42,7 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
           disconnects add user.id
           null
         } else newClients
-      }
+      },
     )
 
   def tellOne(userId: User.ID, payload: ClientMsg): Unit =

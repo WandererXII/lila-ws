@@ -2,7 +2,7 @@ package lila.ws
 
 import akka.actor.typed.ActorRef
 
-import ipc.ClientMsg
+import lila.ws.ipc.ClientMsg
 
 object Bus {
 
@@ -10,7 +10,7 @@ object Bus {
 
   private val impl = new util.EventBus[ClientMsg, Chan, ActorRef[ClientMsg]](
     initialCapacity = 65535,
-    publish = (actor, event) => actor ! event
+    publish = (actor, event) => actor ! event,
   )
 
   def subscribe   = impl.subscribe _
@@ -51,6 +51,6 @@ object Bus {
   // distinct bus for internal events
   val internal = new util.EventBus[Any, Chan, PartialFunction[Any, Unit]](
     initialCapacity = 16,
-    publish = (listener, event) => listener lift event
+    publish = (listener, event) => listener lift event,
   )
 }

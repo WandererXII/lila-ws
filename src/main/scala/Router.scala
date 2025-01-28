@@ -1,9 +1,10 @@
 package lila.ws
 
-import io.netty.handler.codec.http.HttpResponseStatus
 import scala.concurrent.Future
 
-import util.RequestHeader
+import io.netty.handler.codec.http.HttpResponseStatus
+
+import lila.ws.util.RequestHeader
 
 final class Router(controller: Controller) {
 
@@ -24,8 +25,7 @@ final class Router(controller: Controller) {
       case Array("play", id, _)                 => controller.roundPlay(Game.FullId(id), req, emit)
       case Array("challenge", id, "socket", _)  => controller.challenge(Challenge.Id(id), req, emit)
       case Array("team", id)                    => controller.team(id, req, emit)
-      case Array("swiss", id)                   => controller.swiss(id, req, emit)
-      case _                                    => Future successful Left(HttpResponseStatus.NOT_FOUND)
+      case _ => Future successful Left(HttpResponseStatus.NOT_FOUND)
     }
   }
 }

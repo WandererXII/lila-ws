@@ -1,14 +1,15 @@
 package lila.ws
 package netty
 
+import scala.concurrent.ExecutionContext
+
 import com.typesafe.scalalogging.Logger
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
 import io.netty.handler.codec.http.websocketx.WebSocketFrame
-import scala.concurrent.ExecutionContext
 
-import ipc.ClientOut
+import lila.ws.ipc.ClientOut
 
 final private class FrameHandler(implicit ec: ExecutionContext)
     extends SimpleChannelInboundHandler[WebSocketFrame] {
@@ -18,7 +19,7 @@ final private class FrameHandler(implicit ec: ExecutionContext)
 
   override protected def channelRead0(
       ctx: ChannelHandlerContext,
-      anyFrame: WebSocketFrame
+      anyFrame: WebSocketFrame,
   ) =
     anyFrame match {
       case frame: TextWebSocketFrame =>

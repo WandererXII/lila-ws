@@ -1,8 +1,10 @@
 package lila.ws
 package ipc
 
-import shogi.format.usi.{ Usi, UsiCharPair }
 import play.api.libs.json._
+
+import shogi.format.usi.Usi
+import shogi.format.usi.UsiCharPair
 
 import lila.ws.util.LilaJsObject.augment
 
@@ -31,7 +33,7 @@ object ClientIn {
     val write = Json stringify Json.obj(
       "t" -> "n",
       "d" -> members,
-      "r" -> rounds
+      "r" -> rounds,
     )
   }
 
@@ -42,8 +44,8 @@ object ClientIn {
         Json.obj(
           "id"   -> gameId.value,
           "lm"   -> lastUsi,
-          "sfen" -> sfen
-        )
+          "sfen" -> sfen,
+        ),
       )
   }
 
@@ -63,7 +65,8 @@ object ClientIn {
     val version: SocketVersion
   }
 
-  case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends HasVersion {
+  case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll)
+      extends HasVersion {
     lazy val full = Payload(JsonString(s"""{"v":$version,${json.value drop 1}"""))
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
   }
@@ -85,8 +88,8 @@ object ClientIn {
         "redirect",
         Json.obj(
           "id"  -> fullId.value,
-          "url" -> s"/$fullId"
-        )
+          "url" -> s"/$fullId",
+        ),
       )
     }
   }
@@ -112,8 +115,8 @@ object ClientIn {
       "tournamentReminder",
       Json.obj(
         "id"   -> tourId,
-        "name" -> tourName
-      )
+        "name" -> tourName,
+      ),
     )
   }
 
@@ -130,7 +133,7 @@ object ClientIn {
       usi: shogi.format.usi.Usi,
       sfen: shogi.format.forsyth.Sfen,
       check: Boolean,
-      chapterId: Option[ChapterId]
+      chapterId: Option[ChapterId],
   ) extends ClientIn {
     def write =
       cliMsg(
@@ -144,11 +147,11 @@ object ClientIn {
                 "sfen"     -> sfen,
                 "id"       -> id,
                 "usi"      -> usi,
-                "children" -> JsArray()
+                "children" -> JsArray(),
               )
-              .add("check" -> check)
+              .add("check" -> check),
           )
-          .add("ch" -> chapterId)
+          .add("ch" -> chapterId),
       )
   }
 
@@ -169,7 +172,7 @@ object ClientIn {
       version: SocketVersion,
       flags: RoundEventFlags,
       tpe: String,
-      data: JsonString
+      data: JsonString,
   ) extends HasVersion {
     val full      = Payload(JsonString(cliMsg(tpe, data, version)))
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
@@ -192,7 +195,7 @@ object ClientIn {
           "t"       -> "following_onlines",
           "d"       -> users.map(_.data.titleName),
           "playing" -> users.collect { case u if u.meta.playing => u.id },
-          "patrons" -> users.collect { case u if u.data.patron => u.id }
+          "patrons" -> users.collect { case u if u.data.patron => u.id },
         )
     }
     case class Enters(user: FriendList.UserView) extends ClientIn {
@@ -200,7 +203,7 @@ object ClientIn {
       def write =
         Json stringify Json.obj(
           "t" -> "following_enters",
-          "d" -> user.data.titleName
+          "d" -> user.data.titleName,
         ) ++ {
           if (user.data.patron) Json.obj("patron" -> true)
           else Json.obj()
@@ -223,7 +226,7 @@ object ClientIn {
   private def cliMsg[A: Writes](t: String, data: A): String =
     Json stringify Json.obj(
       "t" -> t,
-      "d" -> data
+      "d" -> data,
     )
   private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
   private def cliMsg(t: String, data: JsonString, version: SocketVersion): String =

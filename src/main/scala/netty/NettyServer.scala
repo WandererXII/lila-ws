@@ -1,20 +1,23 @@
 package lila.ws
 package netty
 
+import scala.concurrent.ExecutionContext
+
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.{ Channel, ChannelInitializer }
-import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
+import io.netty.channel.Channel
+import io.netty.channel.ChannelInitializer
+import io.netty.channel.epoll.EpollEventLoopGroup
+import io.netty.channel.epoll.EpollServerSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http._
-import scala.concurrent.ExecutionContext
 
 final class NettyServer(
     clients: ClientSystem,
     router: Router,
-    config: Config
+    config: Config,
 )(implicit ec: ExecutionContext) {
 
   private val logger = Logger(getClass)

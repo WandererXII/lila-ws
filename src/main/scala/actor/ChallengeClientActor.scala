@@ -1,9 +1,10 @@
 package lila.ws
 
+import akka.actor.typed.Behavior
+import akka.actor.typed.PostStop
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ Behavior, PostStop }
 
-import ipc._
+import lila.ws.ipc._
 
 object ChallengeClientActor {
 
@@ -12,11 +13,11 @@ object ChallengeClientActor {
   case class State(
       owner: Boolean,
       room: RoomActor.State,
-      site: ClientActor.State = ClientActor.State()
+      site: ClientActor.State = ClientActor.State(),
   )
 
   def start(roomState: RoomActor.State, owner: Boolean, fromVersion: Option[SocketVersion])(
-      deps: Deps
+      deps: Deps,
   ): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
       RoomActor.onStart(roomState, fromVersion, deps, ctx)

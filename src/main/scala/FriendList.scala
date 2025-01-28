@@ -1,17 +1,19 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import SocialGraph.UserMeta
-import ipc.ClientIn.following._
+import com.github.blemale.scaffeine.AsyncLoadingCache
+import com.github.blemale.scaffeine.Scaffeine
 
-import scala.concurrent.{ ExecutionContext, Future }
+import lila.ws.SocialGraph.UserMeta
+import lila.ws.ipc.ClientIn.following._
 
 final class FriendList(
     users: Users,
     graph: SocialGraph,
-    mongo: Mongo
+    mongo: Mongo,
 )(implicit ec: ExecutionContext) {
 
   import FriendList._
@@ -64,7 +66,9 @@ final class FriendList(
       if (subs.nonEmpty) users.tellMany(subs, msg(subject.id))
     }
 
-  private def updateView(userId: User.ID, msg: UserView => ipc.ClientIn)(update: UserMeta => UserMeta) =
+  private def updateView(userId: User.ID, msg: UserView => ipc.ClientIn)(
+      update: UserMeta => UserMeta,
+  ) =
     graph.tell(userId, update) foreach { case (subject, subs) =>
       if (subs.nonEmpty) userDatas.get(subject.id) foreach {
         _ foreach { data =>
@@ -78,7 +82,7 @@ final class FriendList(
     {
       case ipc.LilaIn.ConnectUser(user, _)   => onConnect(user.id)
       case ipc.LilaIn.DisconnectUsers(users) => users foreach onDisconnect
-    }
+    },
   )
 }
 

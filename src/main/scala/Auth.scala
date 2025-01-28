@@ -1,9 +1,11 @@
 package lila.ws
 
-import reactivemongo.api.bson._
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import util.RequestHeader
+import reactivemongo.api.bson._
+
+import lila.ws.util.RequestHeader
 
 final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: ExecutionContext) {
 
@@ -15,7 +17,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: 
           mongo.security {
             _.find(
               BSONDocument("_id" -> sid, "up" -> true),
-              Some(BSONDocument("_id" -> false, "user" -> true))
+              Some(BSONDocument("_id" -> false, "user" -> true)),
             ).one[BSONDocument]
           } map {
             _ flatMap {

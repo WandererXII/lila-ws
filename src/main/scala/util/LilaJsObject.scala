@@ -30,5 +30,5 @@ final class LilaJsObject(private val js: JsObject) extends AnyVal {
 
 object LilaJsObject {
 
-  implicit def augment(o: JsObject) = new LilaJsObject(o)
+  implicit def augment(o: JsObject): LilaJsObject = new LilaJsObject(o)
 }

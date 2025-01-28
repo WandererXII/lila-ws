@@ -1,14 +1,17 @@
 package lila.ws
 package ipc
 
-import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import play.api.libs.json._
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
+
+import com.github.blemale.scaffeine.AsyncLoadingCache
+import com.github.blemale.scaffeine.Scaffeine
+import play.api.libs.json._
 
 final class CrowdJson(
     mongo: Mongo,
-    lightUserApi: LightUserApi
+    lightUserApi: LightUserApi,
 )(implicit ec: ExecutionContext) {
 
   def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
@@ -21,16 +24,16 @@ final class CrowdJson(
   def round(crowd: RoundCrowd.Output): Future[ClientIn.Crowd] =
     spectatorsOf(
       crowd.room.copy(
-        users = if (crowd.room.users.size > 20) Nil else crowd.room.users
-      )
+        users = if (crowd.room.users.size > 20) Nil else crowd.room.users,
+      ),
     ) map { spectators =>
       ClientIn.Crowd(
         Json
           .obj(
             "sente"    -> (crowd.players.sente > 0),
             "gote"     -> (crowd.players.gote > 0),
-            "watchers" -> spectators
-          )
+            "watchers" -> spectators,
+          ),
       )
     }
 
@@ -41,7 +44,7 @@ final class CrowdJson(
         Json.obj(
           "nb"    -> crowd.members,
           "users" -> names.filterNot(isBotName),
-          "anons" -> crowd.anons
+          "anons" -> crowd.anons,
         )
       }
 

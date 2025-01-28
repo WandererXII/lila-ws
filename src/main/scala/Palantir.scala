@@ -1,7 +1,9 @@
 package lila.ws
 
 import scala.concurrent.duration._
-import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+
+import com.github.blemale.scaffeine.Cache
+import com.github.blemale.scaffeine.Scaffeine
 
 object Palantir {
 

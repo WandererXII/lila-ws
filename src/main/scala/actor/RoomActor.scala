@@ -2,7 +2,7 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.ActorContext
 
-import ipc._
+import lila.ws.ipc._
 
 object RoomActor {
 
@@ -11,14 +11,14 @@ object RoomActor {
   case class State(
       id: RoomId,
       isTroll: IsTroll,
-      lastCrowd: ClientIn.Crowd = ClientIn.emptyCrowd
+      lastCrowd: ClientIn.Crowd = ClientIn.emptyCrowd,
   )
 
   def onStart(
       state: State,
       fromVersion: Option[SocketVersion],
       deps: Deps,
-      ctx: ActorContext[ClientMsg]
+      ctx: ActorContext[ClientMsg],
   ): Unit = {
     import deps._
     ClientActor.onStart(deps, ctx)
@@ -42,7 +42,7 @@ object RoomActor {
 
   def receive(
       state: State,
-      deps: Deps
+      deps: Deps,
   ): PartialFunction[ClientMsg, (Option[State], Option[LilaIn.AnyRoom])] = {
 
     case versioned: ClientIn.Versioned =>

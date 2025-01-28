@@ -1,20 +1,24 @@
 package lila.ws
 package netty
 
-import io.netty.channel._
-import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.websocketx._
-import io.netty.handler.codec.TooLongFrameException
-import io.netty.util.AttributeKey
 import java.io.IOException
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
+
 import akka.actor.typed.ActorRef
+import io.netty.channel._
+import io.netty.handler.codec.TooLongFrameException
+import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
-import io.netty.util.concurrent.{ Future => NettyFuture, GenericFutureListener }
-import scala.concurrent.{ ExecutionContext, Future, Promise }
+import io.netty.handler.codec.http.websocketx._
+import io.netty.util.AttributeKey
+import io.netty.util.concurrent.GenericFutureListener
+import io.netty.util.concurrent.{ Future => NettyFuture }
 
 final private class ProtocolHandler(
     clients: ActorRef[Clients.Control],
-    router: Router
+    router: Router,
 )(implicit ec: ExecutionContext)
     extends WebSocketServerProtocolHandler(
       "/",   // path
@@ -23,11 +27,11 @@ final private class ProtocolHandler(
       8192,  // max frame size - /inbox allows sending 8000 chars
       false, // allowMaskMismatch (?)
       true,  // checkStartsWith
-      true   // dropPongFrames
+      true,  // dropPongFrames
     ) {
 
-  import ProtocolHandler._
   import Controller.Endpoint
+  import ProtocolHandler._
 
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: java.lang.Object): Unit = {
     evt match {
@@ -37,7 +41,7 @@ final private class ProtocolHandler(
         ctx.channel.attr(key.client).set(promise.future)
         router(
           new util.RequestHeader(hs.requestUri, hs.requestHeaders),
-          emitToChannel(ctx.channel)
+          emitToChannel(ctx.channel),
         ) foreach {
           case Left(status) =>
             terminateConnection(ctx.channel)
@@ -52,7 +56,7 @@ final private class ProtocolHandler(
   private def connectActorToChannel(
       endpoint: Endpoint,
       channel: Channel,
-      promise: Promise[Client]
+      promise: Promise[Client],
   ): Unit = {
     channel.attr(key.limit).set(endpoint.rateLimit)
     clients ! Clients.Start(endpoint.behavior, promise)
@@ -75,7 +79,7 @@ final private class ProtocolHandler(
   // cancel before the handshake was completed
   private def sendSimpleErrorResponse(
       channel: Channel,
-      status: HttpResponseStatus
+      status: HttpResponseStatus,
   ): ChannelFuture = {
     val response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status)
     response.headers.set(HttpHeaderNames.CONNECTION, "close")
@@ -108,7 +112,9 @@ final private class ProtocolHandler(
         Monitor.websocketError("uriTooLong")
         sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
       case e: IllegalArgumentException
-          if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
+          if Option(e.getMessage).exists(
+            _ contains "Header value contains a prohibited character",
+          ) =>
         Monitor.websocketError("headerIllegalChar")
         sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
       case _ =>

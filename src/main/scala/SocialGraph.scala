@@ -1,11 +1,13 @@
 package lila.ws
 
-import com.typesafe.config.Config
 import java.util.TreeSet
 import java.util.concurrent.locks.ReentrantLock
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.util.Random
+
+import com.typesafe.config.Config
 
 // Best effort fixed capacity cache for the social graph of online users.
 //
@@ -142,7 +144,9 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     }).toList
   }
 
-  private def doLoadFollowed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserEntry]] = {
+  private def doLoadFollowed(
+      id: User.ID,
+  )(implicit ec: ExecutionContext): Future[List[UserEntry]] = {
     mongo.loadFollowed(id) map { followed =>
       lock.lock()
       try {
@@ -237,7 +241,10 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
   // Updates the status of a user. Returns the current user info and a list of
   // subscribed users that are interested in this update (if any).
-  def tell(id: User.ID, meta: UserMeta => UserMeta): Option[(SocialGraph.UserEntry, List[User.ID])] = {
+  def tell(
+      id: User.ID,
+      meta: UserMeta => UserMeta,
+  ): Option[(SocialGraph.UserEntry, List[User.ID])] = {
     lock.lock()
     try {
       findSlot(id, -1) match {

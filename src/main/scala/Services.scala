@@ -2,7 +2,7 @@ package lila.ws
 
 import scala.concurrent.duration._
 
-import ipc.LilaIn
+import lila.ws.ipc.LilaIn
 
 final class Services(
     lilaRedis: Lila,
@@ -13,7 +13,7 @@ final class Services(
     val keepAlive: KeepAlive,
     val lobby: Lobby,
     val friends: FriendList,
-    val stormSign: StormSign
+    val stormSign: StormSign,
 ) {
 
   def lila = lilaRedis.emit

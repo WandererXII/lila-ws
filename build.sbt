@@ -2,85 +2,82 @@ name := "lila-ws"
 
 version := "2.0"
 
+scalaVersion := "2.13.16"
+
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
 val akkaVersion          = "2.6.21"
-val kamonVersion         = "2.4.8"
-val nettyVersion         = "4.1.111.Final"
+val kamonVersion         = "2.7.5"
+val nettyVersion         = "4.1.116.Final"
 val reactivemongoVersion = "1.0.10"
 
-scalaVersion := "2.13.14"
-
-libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
-libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
-libraryDependencies += "org.reactivemongo"           % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-linux-x86-64"
-libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "6.3.2.RELEASE"
-libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
-libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
-libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
-libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"             % akkaVersion
-libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                   % akkaVersion
-libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.5"
-libraryDependencies += "joda-time"                   % "joda-time"                    % "2.12.7"
-libraryDependencies += "com.github.blemale"         %% "scaffeine"                    % "5.2.1" % "compile"
-libraryDependencies += "ch.qos.logback"              % "logback-classic"              % "1.4.14"
-libraryDependencies += "com.typesafe.play"          %% "play-json"                    % "2.10.6"
-libraryDependencies += "io.kamon"                   %% "kamon-core"                   % kamonVersion
-libraryDependencies += "io.kamon"                   %% "kamon-influxdb"               % kamonVersion
-libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"         % kamonVersion
-libraryDependencies += "com.softwaremill.macwire"   %% "macros"                       % "2.5.9" % "provided"
-libraryDependencies += "com.roundeights"            %% "hasher"                       % "1.2.1"
-libraryDependencies += "com.github.ornicar"         %% "scalalib"                     % "7.0.2"
-libraryDependencies += "io.github.WandererXII"      %% "scalashogi"                   % "12.1.1"
-
-resolvers ++= Seq(
-  "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
-)
 resolvers ++= Resolver.sonatypeOssRepos("snapshots")
+// for com.roundheights hasher
+resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
-scalacOptions ++= Seq(
-    "-explaintypes",
-    "-feature",
-    "-language:higherKinds",
-    "-language:implicitConversions",
-    "-language:postfixOps",
-    "-Ymacro-annotations",
-    // Warnings as errors!
-    //"-Xfatal-warnings",
-    // Linting options
-    "-unchecked",
-    "-Xcheckinit",
-    "-Xlint:adapted-args",
-    "-Xlint:constant",
-    "-Xlint:delayedinit-select",
-    "-Xlint:deprecation",
-    "-Xlint:inaccessible",
-    "-Xlint:infer-any",
-    "-Xlint:missing-interpolator",
-    "-Xlint:nullary-unit",
-    "-Xlint:option-implicit",
-    "-Xlint:package-object-classes",
-    "-Xlint:poly-implicit-overload",
-    "-Xlint:private-shadow",
-    "-Xlint:stars-align",
-    "-Xlint:type-parameter-shadow",
-    "-Wconf:cat=other-implicit-type:s",
-    "-Wdead-code",
-    "-Wextra-implicit",
-    //"-Wnumeric-widen",
-    "-Wunused:imports",
-    "-Wunused:locals",
-    "-Wunused:patvars",
-    "-Wunused:privates",
-    "-Wunused:implicits",
-    "-Wunused:explicits",
-    /* "-Wvalue-discard" */
+libraryDependencies ++= Seq(
+  "org.reactivemongo" %% "reactivemongo"                % reactivemongoVersion,
+  "org.reactivemongo" %% "reactivemongo-bson-api"       % reactivemongoVersion,
+  "org.reactivemongo"  % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-linux-x86-64",
+  "io.lettuce"         % "lettuce-core"                 % "6.5.2.RELEASE",
+  "io.netty"           % "netty-handler"                % nettyVersion,
+  "io.netty"           % "netty-codec-http"             % nettyVersion,
+  "io.netty"           % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64",
+  "com.typesafe.akka" %% "akka-actor-typed"             % akkaVersion,
+  "com.typesafe.akka" %% "akka-slf4j"                   % akkaVersion,
+  "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.5",
+  "joda-time"                   % "joda-time"            % "2.13.0",
+  "com.github.blemale"         %% "scaffeine"            % "5.3.0" % "compile",
+  "ch.qos.logback"              % "logback-classic"      % "1.5.16",
+  "com.typesafe.play"          %% "play-json"            % "2.10.6",
+  "io.kamon"                   %% "kamon-core"           % kamonVersion,
+  "io.kamon"                   %% "kamon-influxdb"       % kamonVersion,
+  "io.kamon"                   %% "kamon-system-metrics" % kamonVersion,
+  "com.softwaremill.macwire"   %% "macros"               % "2.6.5" % "provided",
+  "com.roundeights"            %% "hasher"               % "1.2.1",
+  "io.github.WandererXII"      %% "scalashogi"           % "12.2.0",
 )
 
-Compile / doc / sources := Seq.empty
+Compile / doc / sources                := Seq.empty
 Compile / packageDoc / publishArtifact := false
 
 reStart / javaOptions += "-Xmx128m"
 
-/* scalafmtOnCompile := true */
+scalacOptions ++= Seq(
+  "-explaintypes",
+  "-feature",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-language:postfixOps",
+  "-Ymacro-annotations",
+  "-unchecked",
+  "-Xcheckinit",
+  // Linting options
+  "-Xlint:adapted-args",
+  "-Xlint:constant",
+  "-Xlint:delayedinit-select",
+  "-Xlint:deprecation",
+  "-Xlint:inaccessible",
+  "-Xlint:infer-any",
+  "-Xlint:missing-interpolator",
+  "-Xlint:nullary-unit",
+  "-Xlint:option-implicit",
+  "-Xlint:package-object-classes",
+  "-Xlint:poly-implicit-overload",
+  "-Xlint:private-shadow",
+  "-Xlint:stars-align",
+  "-Xlint:type-parameter-shadow",
+  // Warning options
+  "-Wdead-code",
+  "-Wextra-implicit",
+  "-Wunused:imports",
+  "-Wunused:patvars",
+  "-Wunused:privates",
+  "-Wunused:locals",
+  "-Wunused:explicits",
+  "-Wunused:implicits",
+  "-Wmacros:after",
+  // "-Wvalue-discard",
+  "-Werror",
+)

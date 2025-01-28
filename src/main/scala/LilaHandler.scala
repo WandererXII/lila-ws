@@ -1,10 +1,12 @@
 package lila.ws
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Promise
+
 import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
-import scala.concurrent.{ ExecutionContext, Promise }
 
-import ipc._
+import lila.ws.ipc._
 
 final class LilaHandler(
     lila: Lila,
@@ -14,11 +16,11 @@ final class LilaHandler(
     roundCrowd: RoundCrowd,
     mongo: Mongo,
     clients: ActorRef[Clients.Control],
-    services: Services
+    services: Services,
 )(implicit ec: ExecutionContext) {
 
-  import LilaOut._
   import Bus.publish
+  import LilaOut._
 
   private val logger = Logger(getClass)
 
@@ -45,7 +47,7 @@ final class LilaHandler(
     case ApiUserOnline(user, true) =>
       clients ! Clients.Start(
         ApiActor start ApiActor.Deps(User(user), services),
-        Promise[_root_.lila.ws.Client]()
+        Promise[_root_.lila.ws.Client](),
       )
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
 
@@ -88,24 +90,20 @@ final class LilaHandler(
     case msg      => roomHandler(msg)
   }
 
-  private val swissHandler: Emit[LilaOut] = {
-    case LilaBoot => roomBoot(_.idFilter.swiss, lila.emit.swiss)
-    case msg      => roomHandler(msg)
-  }
-
   private val tourHandler: Emit[LilaOut] = {
     case GetWaitingUsers(roomId, name) =>
-      mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
-        case (active, playing) =>
-          val present   = roomCrowd getUsers roomId
-          val standby   = active diff playing
-          val allAbsent = standby diff present
-          lila.emit.tour(LilaIn.WaitingUsers(roomId, name, present, standby))
-          val absent = {
-            if (allAbsent.size > 100) util.Util.random.shuffle(allAbsent) take 80
-            else allAbsent
-          }.toSet
-          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
+      mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(
+        roomId.value,
+      ) foreach { case (active, playing) =>
+        val present   = roomCrowd getUsers roomId
+        val standby   = active diff playing
+        val allAbsent = standby diff present
+        lila.emit.tour(LilaIn.WaitingUsers(roomId, name, present, standby))
+        val absent = {
+          if (allAbsent.size > 100) util.Util.random.shuffle(allAbsent) take 80
+          else allAbsent
+        }.toSet
+        if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
       }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
     case msg      => roomHandler(msg)
@@ -179,7 +177,7 @@ final class LilaHandler(
 
   private def roomBoot(
       filter: Mongo => Mongo.IdFilter,
-      lilaIn: Emit[LilaIn.RoomSetVersions]
+      lilaIn: Emit[LilaIn.RoomSetVersions],
   ): Unit = {
     val versions = History.room.allVersions
     filter(mongo)(versions.map(_._1)) foreach { ids =>
@@ -192,7 +190,6 @@ final class LilaHandler(
     case Lila.chans.site.out      => siteHandler
     case Lila.chans.lobby.out     => lobbyHandler
     case Lila.chans.tour.out      => tourHandler
-    case Lila.chans.swiss.out     => swissHandler
     case Lila.chans.simul.out     => simulHandler
     case Lila.chans.study.out     => studyHandler
     case Lila.chans.team.out      => teamHandler

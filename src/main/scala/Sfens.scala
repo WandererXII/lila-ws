@@ -1,11 +1,14 @@
 package lila.ws
 
-import akka.actor.typed.ActorRef
-import shogi.format.forsyth.Sfen
-import shogi.format.usi.{ UciToUsi, Usi }
 import java.util.concurrent.ConcurrentHashMap
 
-import ipc._
+import akka.actor.typed.ActorRef
+
+import shogi.format.forsyth.Sfen
+import shogi.format.usi.UciToUsi
+import shogi.format.usi.Usi
+
+import lila.ws.ipc._
 
 /* Manages subscriptions to Sfen updates */
 object Sfens {
@@ -24,7 +27,7 @@ object Sfens {
           {
             case (_, null)                  => Watched(None, Set(client))
             case (_, Watched(pos, clients)) => Watched(pos, clients + client)
-          }
+          },
         )
         .position foreach { case Position(lastUsi, sfen) =>
         client ! ClientIn.Sfen(gameId, lastUsi, sfen)
@@ -40,7 +43,7 @@ object Sfens {
           val newClients = watched.clients - client
           if (newClients.isEmpty) null
           else watched.copy(clients = newClients)
-        }
+        },
       )
     }
 
@@ -59,7 +62,7 @@ object Sfens {
             }
           case _ => watched
         }
-      }
+      },
     )
   }
 

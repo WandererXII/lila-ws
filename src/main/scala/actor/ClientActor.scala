@@ -1,18 +1,19 @@
 package lila.ws
 
 import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
+import akka.actor.typed.scaladsl.ActorContext
+import akka.actor.typed.scaladsl.Behaviors
 import com.typesafe.scalalogging.Logger
 
-import ipc._
-import util.Util.nowSeconds
+import lila.ws.ipc._
+import lila.ws.util.Util.nowSeconds
 
 object ClientActor {
 
   case class State(
       watchedGames: Set[Game.Id] = Set.empty,
       lastPing: Int = nowSeconds,
-      tourReminded: Boolean = false
+      tourReminded: Boolean = false,
   )
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
@@ -56,7 +57,7 @@ object ClientActor {
       state: State,
       deps: Deps,
       ctx: ActorContext[ClientMsg],
-      msg: ClientOutSite
+      msg: ClientOutSite,
   ): State = {
 
     import deps._
@@ -142,7 +143,7 @@ object ClientActor {
       ip = req.ip,
       sri = sri,
       user = user,
-      flag = req.flag
+      flag = req.flag,
     )
 
   case class Req(
@@ -150,7 +151,7 @@ object ClientActor {
       ip: Option[IpAddress],
       sri: Sri,
       flag: Option[Flag],
-      user: Option[User]
+      user: Option[User],
   ) {
     def userId            = user.map(_.id)
     override def toString = s"${user getOrElse "Anon"} $name"
@@ -159,7 +160,7 @@ object ClientActor {
   case class Deps(
       clientIn: ClientEmit,
       req: Req,
-      services: Services
+      services: Services,
   ) {
     def lilaIn     = services.lila
     def users      = services.users
