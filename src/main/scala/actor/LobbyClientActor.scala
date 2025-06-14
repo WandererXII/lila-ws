@@ -1,10 +1,11 @@
 package lila.ws
 
+import akka.actor.typed.Behavior
+import akka.actor.typed.PostStop
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ Behavior, PostStop }
 import play.api.libs.json.JsValue
 
-import ipc._
+import lila.ws.ipc._
 
 object LobbyClientActor {
 
@@ -12,7 +13,7 @@ object LobbyClientActor {
 
   case class State(
       idle: Boolean = false,
-      site: ClientActor.State = ClientActor.State()
+      site: ClientActor.State = ClientActor.State(),
   )
 
   def start(deps: Deps): Behavior[ClientMsg] =

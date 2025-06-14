@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.Logger
 final class RateLimit(
     maxCredits: Int,
     intervalMillis: Int,
-    name: String
+    name: String,
 ) {
   import RateLimit._
 

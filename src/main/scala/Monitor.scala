@@ -1,18 +1,19 @@
 package lila.ws
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import kamon.Kamon
 import kamon.tag.TagSet
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
 
 final class Monitor(
     config: Config,
-    services: Services
+    services: Services,
 )(implicit
     scheduler: akka.actor.typed.Scheduler,
-    ec: ExecutionContext
+    ec: ExecutionContext,
 ) {
 
   import Monitor._

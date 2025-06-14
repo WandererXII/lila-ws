@@ -41,17 +41,15 @@ object Game {
   case class RoundPlayer(
       id: PlayerId,
       color: Color,
-      ext: Option[RoundExt]
+      ext: Option[RoundExt],
   ) {
     def tourId  = ext collect { case RoundExt.Tour(id) => id }
-    def swissId = ext collect { case RoundExt.Swiss(id) => id }
     def simulId = ext collect { case RoundExt.Simul(id) => id }
   }
 
   sealed abstract trait RoundExt { val id: String }
   object RoundExt {
     case class Tour(id: String)  extends RoundExt
-    case class Swiss(id: String) extends RoundExt
     case class Simul(id: String) extends RoundExt
   }
 }
@@ -79,10 +77,6 @@ object Chat {
 }
 
 object Team {
-  type ID = String
-}
-
-object Swiss {
   type ID = String
 }
 
@@ -146,7 +140,7 @@ case class RoundEventFlags(
     owner: Boolean,
     player: Option[shogi.Color],
     moveBy: Option[shogi.Color],
-    troll: Boolean
+    troll: Boolean,
 )
 
 case class UserTv(value: User.ID) extends AnyVal with StringValue

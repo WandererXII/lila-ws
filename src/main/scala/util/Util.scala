@@ -17,7 +17,9 @@ object Util {
 
     def string(len: Int): String = new String(Array.fill(len)(char))
 
-    def shuffle[T, C](xs: IterableOnce[T])(implicit bf: scala.collection.BuildFrom[xs.type, T, C]): C =
+    def shuffle[T, C](xs: IterableOnce[T])(implicit
+        bf: scala.collection.BuildFrom[xs.type, T, C],
+    ): C =
       new scala.util.Random(local).shuffle(xs)
 
   }

@@ -2,12 +2,12 @@ package lila.ws
 
 import scala.concurrent.duration._
 
-import ipc.ClientIn.LobbyPong
-import ipc.LilaIn
+import lila.ws.ipc.ClientIn.LobbyPong
+import lila.ws.ipc.LilaIn
 
 final class Lobby(
     lila: Lila,
-    groupedWithin: util.GroupedWithin
+    groupedWithin: util.GroupedWithin,
 ) {
 
   private val lilaIn = lila.emit.lobby
@@ -16,7 +16,9 @@ final class Lobby(
     lilaIn(LilaIn.ConnectSris(connects))
   }
 
-  val disconnect = groupedWithin[Sri](50, 487.millis) { sris => lilaIn(LilaIn.DisconnectSris(sris)) }
+  val disconnect = groupedWithin[Sri](50, 487.millis) { sris =>
+    lilaIn(LilaIn.DisconnectSris(sris))
+  }
 
   object pong {
 

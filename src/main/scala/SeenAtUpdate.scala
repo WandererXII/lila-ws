@@ -1,16 +1,20 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import com.github.blemale.scaffeine.Cache
+import com.github.blemale.scaffeine.Scaffeine
 import org.joda.time.DateTime
+import reactivemongo.api.ReadConcern
+import reactivemongo.api.WriteConcern
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ ReadConcern, WriteConcern }
-import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
 
 final class SeenAtUpdate(mongo: Mongo)(implicit
     context: ExecutionContext,
-    scheduler: akka.actor.typed.Scheduler
+    scheduler: akka.actor.typed.Scheduler,
 ) {
 
   import Mongo._
@@ -30,7 +34,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
           coll = userColl,
           selector = BSONDocument("_id" -> user.id),
           modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
-          fields = BSONDocument("roles" -> true, "_id" -> false)
+          fields = BSONDocument("roles" -> true, "_id" -> false),
         )
         isCoach = userDoc.exists(_.getAsOpt[List[String]]("roles").exists(_ contains "ROLE_COACH"))
         _ <-
@@ -38,8 +42,8 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
             mongo.coach(
               _.update(ordered = false).one(
                 BSONDocument("_id"  -> user.id),
-                BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
-              )
+                BSONDocument("$set" -> BSONDocument("user.seenAt" -> now)),
+              ),
             )
           else Future successful ({})
         _ <-
@@ -47,8 +51,8 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
             mongo.streamer(
               _.update(ordered = false).one(
                 BSONDocument("_id"  -> user.id),
-                BSONDocument("$set" -> BSONDocument("seenAt" -> now))
-              )
+                BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
+              ),
             )
           else Future successful ({})
       } yield ()
@@ -67,12 +71,12 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
           selector = Some(
             BSONDocument(
               "listed"           -> true,
-              "approval.granted" -> true
-            )
+              "approval.granted" -> true,
+            ),
           ),
           readConcern = ReadConcern.Local,
-          collation = None
-        )
+          collation = None,
+        ),
       )
 
     scheduler.scheduleWithFixedDelay(30.seconds, 60.seconds) { () =>
@@ -86,7 +90,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
       coll: BSONCollection,
       selector: BSONDocument,
       modifier: BSONDocument,
-      fields: BSONDocument
+      fields: BSONDocument,
   ): Future[Option[BSONDocument]] =
     coll.findAndModify(
       selector = selector,
@@ -97,6 +101,6 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
       writeConcern = WriteConcern.Default,
       maxTime = None,
       collation = None,
-      arrayFilters = Seq.empty
+      arrayFilters = Seq.empty,
     ) map (_.result[BSONDocument])
 }

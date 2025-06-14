@@ -1,9 +1,12 @@
 package lila.ws
 package util
 
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder
-import io.netty.handler.codec.http.{ HttpHeaderNames, HttpHeaders, QueryStringDecoder }
 import scala.jdk.CollectionConverters._
+
+import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.codec.http.HttpHeaders
+import io.netty.handler.codec.http.QueryStringDecoder
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 
 final class RequestHeader(uri: String, req: HttpHeaders) {
 

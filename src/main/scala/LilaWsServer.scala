@@ -1,13 +1,16 @@
 package lila.ws
 
-import akka.actor.typed.{ ActorSystem, Scheduler }
-import com.softwaremill.macwire._
-import com.typesafe.config.{ Config, ConfigFactory }
 import scala.annotation.nowarn
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
-import util.Util.nowSeconds
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.Scheduler
+import com.softwaremill.macwire._
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
+import lila.ws.util.Util.nowSeconds
 
 object Boot extends App {
 
@@ -47,7 +50,7 @@ final class LilaWsServer(
     lila: Lila,
     lobby: Lobby,
     monitor: Monitor,
-    scheduler: Scheduler
+    scheduler: Scheduler,
 )(implicit ec: ExecutionContext) {
 
   def start(): Unit = {
@@ -59,7 +62,7 @@ final class LilaWsServer(
       {
         case ipc.LilaIn.ConnectUser(_, true) => // don't send to lila
         case msg: ipc.LilaIn.Site            => lila.emit.site(msg)
-      }
+      },
     )
 
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>

@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
     historySize: Int,
-    initialCapacity: Int
+    initialCapacity: Int,
 ) {
 
   private val histories = new ConcurrentHashMap[String, List[V]](initialCapacity)
@@ -12,7 +12,7 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
   def add(key: K, event: V): Unit =
     histories.compute(
       key.toString,
-      (_, cur) => event :: Option(cur).getOrElse(Nil).take(historySize)
+      (_, cur) => event :: Option(cur).getOrElse(Nil).take(historySize),
     )
 
   def getFrom(key: K, versionOpt: Option[SocketVersion]): Option[List[V]] = {

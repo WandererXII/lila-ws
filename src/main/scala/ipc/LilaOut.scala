@@ -25,11 +25,11 @@ object LilaOut {
   case class TellUsers(users: Iterable[User.ID], json: JsonString) extends SiteOut
   case class TellAll(json: JsonString)                             extends SiteOut
   case class DisconnectUser(user: User.ID)                         extends SiteOut
-  case class TellSri(sri: Sri, json: JsonString)                   extends SiteOut with LobbyOut with StudyOut
-  case class SetTroll(user: User.ID, v: IsTroll)                   extends SiteOut
-  case class Impersonate(user: User.ID, by: Option[User.ID])       extends SiteOut
-  case class Follow(left: User.ID, right: User.ID)                 extends SiteOut
-  case class UnFollow(left: User.ID, right: User.ID)               extends SiteOut
+  case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut with StudyOut
+  case class SetTroll(user: User.ID, v: IsTroll) extends SiteOut
+  case class Impersonate(user: User.ID, by: Option[User.ID]) extends SiteOut
+  case class Follow(left: User.ID, right: User.ID)           extends SiteOut
+  case class UnFollow(left: User.ID, right: User.ID)         extends SiteOut
 
   // lobby
 
@@ -47,9 +47,11 @@ object LilaOut {
       roomId: RoomId,
       version: SocketVersion,
       troll: IsTroll,
-      json: JsonString
+      json: JsonString,
   ) extends AnyRoomOut
-  case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends AnyRoomOut with SiteOut
+  case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString)
+      extends AnyRoomOut
+      with SiteOut
   case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString)
       extends AnyRoomOut
       with SiteOut
@@ -58,7 +60,7 @@ object LilaOut {
       roomId: RoomId,
       version: SocketVersion,
       troll: IsTroll,
-      json: JsonString
+      json: JsonString,
   ) extends AnyRoomOut
 
   case class RoomStop(roomId: RoomId) extends AnyRoomOut
@@ -78,7 +80,7 @@ object LilaOut {
       version: SocketVersion,
       flags: RoundEventFlags,
       tpe: String,
-      data: JsonString
+      data: JsonString,
   ) extends RoundOut
   case class RoundTourStanding(tourId: Tour.ID, data: JsonString)      extends RoundOut
   case class RoundResyncPlayer(fullId: Game.FullId)                    extends RoundOut
@@ -97,7 +99,7 @@ object LilaOut {
   // impl
 
   private def get(args: String, nb: Int)(
-      f: PartialFunction[Array[String], Option[LilaOut]]
+      f: PartialFunction[Array[String], Option[LilaOut]],
   ): Option[LilaOut] =
     f.applyOrElse(args.split(" ", nb), (_: Array[String]) => None)
 
@@ -169,8 +171,8 @@ object LilaOut {
           Some(
             TellSris(
               commas(sris).toSeq map Sri.apply,
-              JsonString(payload)
-            )
+              JsonString(payload),
+            ),
           )
         }
 
@@ -186,7 +188,7 @@ object LilaOut {
               RoomId(roomId),
               SocketVersion(sv),
               IsTroll(boolean(troll)),
-              JsonString(payload)
+              JsonString(payload),
             )
           }
         }
@@ -216,7 +218,7 @@ object LilaOut {
               RoomId(roomId),
               SocketVersion(sv),
               IsTroll(boolean(troll)),
-              JsonString(payload)
+              JsonString(payload),
             )
           }
         }
@@ -240,7 +242,7 @@ object LilaOut {
                 if (f contains 'W') Some(shogi.Gote)
                 else if (f contains 'B') Some(shogi.Sente)
                 else None,
-              troll = f contains 't'
+              troll = f contains 't',
             )
             RoundVersion(Game.Id(roomId), SocketVersion(sv), flags, tpe, JsonString(data))
           }

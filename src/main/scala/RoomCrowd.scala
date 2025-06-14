@@ -1,14 +1,14 @@
 package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
-import ipc._
+import lila.ws.ipc._
 
 final class RoomCrowd(
     json: CrowdJson,
-    groupedWithin: util.GroupedWithin
+    groupedWithin: util.GroupedWithin,
 )(implicit ec: ExecutionContext) {
 
   import RoomCrowd._
@@ -18,7 +18,7 @@ final class RoomCrowd(
   def connect(roomId: RoomId, user: Option[User]): Unit =
     publish(
       roomId,
-      rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()) connect user)
+      rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()) connect user),
     )
 
   def disconnect(roomId: RoomId, user: Option[User]): Unit = {
@@ -27,7 +27,7 @@ final class RoomCrowd(
       (_, room) => {
         val newRoom = room disconnect user
         if (newRoom.isEmpty) null else newRoom
-      }
+      },
     )
     if (room != null) publish(roomId, room)
   }
@@ -62,7 +62,7 @@ object RoomCrowd {
       roomId: RoomId,
       members: Int,
       users: Iterable[User.ID],
-      anons: Int
+      anons: Int,
   )
 
   def outputOf(roomId: RoomId, room: RoomState) =
@@ -70,12 +70,12 @@ object RoomCrowd {
       roomId = roomId,
       members = room.nbMembers,
       users = room.users.keys,
-      anons = room.anons
+      anons = room.anons,
     )
 
   case class RoomState(
       anons: Int = 0,
-      users: Map[User.ID, Int] = Map.empty
+      users: Map[User.ID, Int] = Map.empty,
   ) {
     def nbUsers   = users.size
     def nbMembers = anons + nbUsers

@@ -1,10 +1,11 @@
 package lila.ws
 
+import akka.actor.typed.Behavior
+import akka.actor.typed.PostStop
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ Behavior, PostStop }
 import play.api.libs.json.JsValue
 
-import ipc._
+import lila.ws.ipc._
 
 object StudyClientActor {
 
@@ -12,11 +13,11 @@ object StudyClientActor {
 
   case class State(
       room: RoomActor.State,
-      site: ClientActor.State = ClientActor.State()
+      site: ClientActor.State = ClientActor.State(),
   )
 
   def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(
-      deps: Deps
+      deps: Deps,
   ): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
       RoomActor.onStart(roomState, fromVersion, deps, ctx)
@@ -30,7 +31,7 @@ object StudyClientActor {
 
         def forward(payload: JsValue): Unit =
           lilaIn.study(
-            LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+            LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload)),
           )
 
         def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {

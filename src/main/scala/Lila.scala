@@ -1,15 +1,19 @@
 package lila.ws
 
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.annotation.tailrec
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration._
+
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.lettuce.core._
 import io.lettuce.core.pubsub._
-import java.util.concurrent.ConcurrentLinkedQueue
-import scala.annotation.tailrec
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
 
-import ipc._
+import lila.ws.ipc._
 
 final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
@@ -49,7 +53,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
   private val handlersPromise                  = Promise[Handlers]()
   private val futureHandlers: Future[Handlers] = handlersPromise.future
-  private var handlers: Handlers               = chan => out => futureHandlers foreach { _(chan)(out) }
+  private var handlers: Handlers = chan => out => futureHandlers foreach { _(chan)(out) }
   def setHandlers(hs: Handlers) = {
     handlers = hs
     handlersPromise success hs
@@ -60,7 +64,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       logger.info(s"Redis connection took ${lap.showDuration}")
       lap.result
     },
-    3.seconds
+    3.seconds,
   )
 
   private def connectAll: Future[Emits] =
@@ -69,21 +73,19 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       connect[LilaIn.Lobby](chans.lobby) zip
       connect[LilaIn.Simul](chans.simul) zip
       connect[LilaIn.Team](chans.team) zip
-      connect[LilaIn.Swiss](chans.swiss) zip
       connect[LilaIn.Study](chans.study) zip
       connect[LilaIn.Round](chans.round) zip
       connect[LilaIn.Challenge](chans.challenge) map {
-        case site ~ tour ~ lobby ~ simul ~ team ~ swiss ~ study ~ round ~ challenge =>
+        case site ~ tour ~ lobby ~ simul ~ team ~ study ~ round ~ challenge =>
           new Emits(
             site,
             tour,
             lobby,
             simul,
             team,
-            swiss,
             study,
             round,
-            challenge
+            challenge,
           )
       }
 
@@ -148,7 +150,6 @@ object Lila {
     object lobby     extends Chan("lobby")
     object simul     extends Chan("simul")
     object team      extends Chan("team")
-    object swiss     extends Chan("swiss")
     object study     extends Chan("study")
     object round     extends Chan("r")
     object challenge extends Chan("chal")
@@ -160,10 +161,9 @@ object Lila {
       val lobby: Emit[LilaIn.Lobby],
       val simul: Emit[LilaIn.Simul],
       val team: Emit[LilaIn.Team],
-      val swiss: Emit[LilaIn.Swiss],
       val study: Emit[LilaIn.Study],
       val round: Emit[LilaIn.Round],
-      val challenge: Emit[LilaIn.Challenge]
+      val challenge: Emit[LilaIn.Challenge],
   ) {
 
     def apply[In](select: Emits => Emit[In], in: In) = select(this)(in)

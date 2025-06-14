@@ -1,16 +1,25 @@
 package lila.ws
 
-import shogi.Color
-import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.parasitic
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Success
+import scala.util.Try
+
+import com.github.blemale.scaffeine.AsyncLoadingCache
+import com.github.blemale.scaffeine.Scaffeine
 import com.typesafe.config.Config
 import org.joda.time.DateTime
+import reactivemongo.api.AsyncDriver
+import reactivemongo.api.DB
+import reactivemongo.api.MongoConnection
+import reactivemongo.api.ReadConcern
+import reactivemongo.api.ReadPreference
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference }
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.parasitic
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Success, Try }
+
+import shogi.Color
 
 final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
@@ -47,7 +56,6 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def challengeColl                   = collNamed("challenge")
   def relationColl                    = collNamed("relation")
   def teamColl                        = collNamed("team")
-  def swissColl                       = collNamed("swiss")
   def studyColl                       = studyDb.map(_ collection "study")(parasitic)
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
@@ -58,8 +66,6 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def simulExists(id: Simul.ID): Future[Boolean] = simulColl flatMap idExists(id)
 
   def teamExists(id: Simul.ID): Future[Boolean] = teamColl flatMap idExists(id)
-
-  def swissExists(id: Simul.ID): Future[Boolean] = swissColl flatMap idExists(id)
 
   def tourExists(id: Simul.ID): Future[Boolean] = tourColl flatMap idExists(id)
 
@@ -89,7 +95,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       gameColl flatMap {
         _.find(
           selector = BSONDocument("_id" -> id.value),
-          projection = Some(gameCacheProjection)
+          projection = Some(gameCacheProjection),
         ).one[BSONDocument]
           .map { docOpt =>
             for {
@@ -98,11 +104,10 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
               users = doc.getAsOpt[List[String]]("us") getOrElse Nil
               players = Color.Map(
                 Game.Player(Game.PlayerId(playerIds take 4), users.headOption.filter(_.nonEmpty)),
-                Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
+                Game.Player(Game.PlayerId(playerIds drop 4), users lift 1),
               )
               ext =
                 doc.getAsOpt[Tour.ID]("tid").map(Game.RoundExt.Tour.apply) orElse
-                  doc.getAsOpt[Swiss.ID]("iid").map(Game.RoundExt.Swiss.apply) orElse
                   doc.getAsOpt[Simul.ID]("sid").map(Game.RoundExt.Simul.apply)
             } yield Game.Round(id, players, ext)
           }(parasitic)
@@ -121,11 +126,11 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
             BSONDocument(
               "$or" -> BSONArray(
                 visibilityNotPrivate,
-                BSONDocument(s"members.${u.id}" -> BSONDocument("$exists" -> true))
-              )
+                BSONDocument(s"members.${u.id}" -> BSONDocument("$exists" -> true)),
+              ),
             )
-          }
-        )
+          },
+        ),
       )
     }
 
@@ -133,7 +138,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     studyColl flatMap {
       _.find(
         selector = BSONDocument("_id" -> id),
-        projection = Some(BSONDocument("members" -> true))
+        projection = Some(BSONDocument("members" -> true)),
       ).one[BSONDocument] map { docOpt =>
         for {
           doc     <- docOpt
@@ -148,7 +153,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         key = "uid",
         selector = Some(BSONDocument("tid" -> tourId, "w" -> BSONDocument("$ne" -> true))),
         readConcern = ReadConcern.Local,
-        collation = None
+        collation = None,
       )
     }
 
@@ -156,9 +161,10 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     tourPairingColl flatMap {
       _.distinct[User.ID, Set](
         key = "u",
-        selector = Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> shogi.Status.Mate.id))),
+        selector =
+          Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> shogi.Status.Mate.id))),
         readConcern = ReadConcern.Local,
-        collation = None
+        collation = None,
       )
     }
 
@@ -166,7 +172,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     challengeColl flatMap {
       _.find(
         selector = BSONDocument("_id" -> challengeId.value),
-        projection = Some(BSONDocument("challenger" -> true))
+        projection = Some(BSONDocument("challenger" -> true)),
       ).one[BSONDocument] map {
         _.flatMap {
           _.getAsOpt[BSONDocument]("challenger")
@@ -193,7 +199,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         key = "u2",
         selector = Some(BSONDocument("u1" -> userId, "r" -> true)),
         readConcern = ReadConcern.Local,
-        collation = None
+        collation = None,
       )
     }
 
@@ -201,7 +207,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     userColl flatMap {
       _.find(
         BSONDocument("_id" -> userId),
-        Some(userDataProjection)
+        Some(userDataProjection),
       ).one[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
         .map { _ flatMap userDataReader }
     }
@@ -229,7 +235,6 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     val tour: IdFilter  = ids => tourColl flatMap filterIds(ids)
     val simul: IdFilter = ids => simulColl flatMap filterIds(ids)
     val team: IdFilter  = ids => teamColl flatMap filterIds(ids)
-    val swiss: IdFilter = ids => swissColl flatMap filterIds(ids)
   }
 
   private def idExists(id: String)(coll: BSONCollection): Future[Boolean] =
@@ -242,7 +247,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         limit = None,
         skip = 0,
         hint = None,
-        readConcern = ReadConcern.Local
+        readConcern = ReadConcern.Local,
       )
       .map(0 < _)(parasitic)
 
@@ -251,7 +256,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       key = "_id",
       selector = Some(BSONDocument("_id" -> BSONDocument("$in" -> ids))),
       readConcern = ReadConcern.Local,
-      collation = None
+      collation = None,
     )
 }
 
@@ -259,7 +264,7 @@ object Mongo {
 
   type IdFilter = Iterable[String] => Future[Set[String]]
 
-  implicit val BSONDateTimeHandler = new BSONHandler[DateTime] {
+  implicit val BSONDateTimeHandler: BSONHandler[DateTime] = new BSONHandler[DateTime] {
 
     @inline def readTry(bson: BSONValue): Try[DateTime] =
       bson.asTry[BSONDateTime] map { dt =>

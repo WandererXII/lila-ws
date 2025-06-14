@@ -1,15 +1,14 @@
 package lila.ws
 
-import cats.syntax.option._
-
+import com.typesafe.scalalogging.Logger
 import play.api.libs.json._
 
-import shogi.format.forsyth.Sfen
-import shogi.format.usi.{ Usi, UsiCharPair }
 import shogi.Pos
-import com.typesafe.scalalogging.Logger
+import shogi.format.forsyth.Sfen
+import shogi.format.usi.Usi
+import shogi.format.usi.UsiCharPair
 
-import ipc._
+import lila.ws.ipc._
 
 object Shogi {
 
@@ -19,7 +18,7 @@ object Shogi {
     Monitor.time(_.shogiMoveTime) {
       try {
         shogi
-          .Game(req.sfen.some, req.variant)(req.usi)
+          .Game(Some(req.sfen), req.variant)(req.usi)
           .toOption map { game =>
           {
 
@@ -38,7 +37,7 @@ object Shogi {
       game: shogi.Game,
       usi: Usi,
       path: Path,
-      chapterId: Option[ChapterId]
+      chapterId: Option[ChapterId],
   ): ClientIn.Node = {
     val sfen = game.toSfen
     ClientIn.Node(
@@ -48,16 +47,18 @@ object Shogi {
       usi = usi,
       sfen = sfen,
       check = game.situation.check,
-      chapterId = chapterId
+      chapterId = chapterId,
     )
   }
 
   object json {
-    implicit val sfenWrite        = Writes[Sfen] { sfen => JsString(sfen.value) }
-    implicit val pathWrite        = Writes[Path] { path => JsString(path.value) }
-    implicit val usiWrite         = Writes[Usi] { usi => JsString(usi.usi) }
-    implicit val usiCharPairWrite = Writes[UsiCharPair] { ucp => JsString(ucp.toString) }
-    implicit val posWrite         = Writes[Pos] { pos => JsString(pos.key) }
-    implicit val chapterIdWrite   = Writes[ChapterId] { ch => JsString(ch.value) }
+    implicit val sfenWrite: Writes[Sfen] = Writes[Sfen] { sfen => JsString(sfen.value) }
+    implicit val pathWrite: Writes[Path] = Writes[Path] { path => JsString(path.value) }
+    implicit val usiWrite: Writes[Usi]   = Writes[Usi] { usi => JsString(usi.usi) }
+    implicit val usiCharPairWrite: Writes[UsiCharPair] = Writes[UsiCharPair] { ucp =>
+      JsString(ucp.toString)
+    }
+    implicit val posWrite: Writes[Pos]             = Writes[Pos] { pos => JsString(pos.key) }
+    implicit val chapterIdWrite: Writes[ChapterId] = Writes[ChapterId] { ch => JsString(ch.value) }
   }
 }

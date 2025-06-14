@@ -1,9 +1,10 @@
 package lila.ws
 
+import akka.actor.typed.Behavior
+import akka.actor.typed.PostStop
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ Behavior, PostStop }
 
-import ipc._
+import lila.ws.ipc._
 
 object RoundClientActor {
 
@@ -13,17 +14,17 @@ object RoundClientActor {
       room: RoomActor.State,
       player: Option[Game.RoundPlayer],
       userTv: Option[UserTv],
-      site: ClientActor.State = ClientActor.State()
+      site: ClientActor.State = ClientActor.State(),
   ) {
     def busChans: List[Bus.Chan] =
       Bus.channel.room(room.id) ::
         player.flatMap(_.tourId).fold(List.empty[Bus.Chan]) { tourId =>
           List(
             Bus.channel.tourStanding(tourId),
-            Bus.channel.externalChat(RoomId(tourId))
+            Bus.channel.externalChat(RoomId(tourId)),
           )
         } :::
-        player.flatMap(p => p.simulId orElse p.swissId).fold(List.empty[Bus.Chan]) { extId =>
+        player.flatMap(p => p.simulId).fold(List.empty[Bus.Chan]) { extId =>
           List(Bus.channel.externalChat(RoomId(extId)))
         } :::
         userTv.map(tv => Bus.channel.userTv(tv.value)).toList
@@ -33,7 +34,7 @@ object RoundClientActor {
       roomState: RoomActor.State,
       player: Option[Game.RoundPlayer],
       userTv: Option[UserTv],
-      fromVersion: Option[SocketVersion]
+      fromVersion: Option[SocketVersion],
   )(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
       import deps._
@@ -145,9 +146,10 @@ object RoundClientActor {
                 def extMsg(id: String) = req.userId.map { LilaIn.ChatSay(RoomId(id), _, msg) }
                 p.ext match {
                   case None =>
-                    lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.color), msg))
+                    lilaIn.round(
+                      LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.color), msg),
+                    )
                   case Some(Tour(id))  => extMsg(id) foreach lilaIn.tour
-                  case Some(Swiss(id)) => extMsg(id) foreach lilaIn.swiss
                   case Some(Simul(id)) => extMsg(id) foreach lilaIn.simul
                 }
             }

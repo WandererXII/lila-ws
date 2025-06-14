@@ -1,9 +1,11 @@
 package lila.ws
 
+import akka.actor.typed.Behavior
+import akka.actor.typed.PostStop
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ Behavior, PostStop }
+import play.api.libs.json.JsValue
 
-import ipc._
+import lila.ws.ipc._
 
 object TourClientActor {
 
@@ -11,11 +13,11 @@ object TourClientActor {
 
   case class State(
       room: RoomActor.State,
-      site: ClientActor.State = ClientActor.State()
+      site: ClientActor.State = ClientActor.State(),
   )
 
   def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(
-      deps: Deps
+      deps: Deps,
   ): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
       RoomActor.onStart(roomState, fromVersion, deps, ctx)
@@ -26,6 +28,11 @@ object TourClientActor {
     Behaviors
       .receive[ClientMsg] { (ctx, msg) =>
         import deps._
+
+        def forward(payload: JsValue): Unit =
+          lilaIn.tour(
+            LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload)),
+          )
 
         def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
 
@@ -43,6 +50,10 @@ object TourClientActor {
             }
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
+
+          case ClientOut.TourForward(payload) =>
+            forward(payload)
+            Behaviors.same
 
           // default receive (site)
           case msg: ClientOutSite =>

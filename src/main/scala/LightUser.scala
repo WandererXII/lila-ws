@@ -1,9 +1,12 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import reactivemongo.api.bson._
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
+
+import com.github.blemale.scaffeine.AsyncLoadingCache
+import com.github.blemale.scaffeine.Scaffeine
+import reactivemongo.api.bson._
 
 final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionContext) {
 
@@ -21,7 +24,7 @@ final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionConte
     mongo.user {
       _.find(
         BSONDocument("_id" -> id),
-        Some(BSONDocument("username" -> true, "title" -> true))
+        Some(BSONDocument("username" -> true, "title" -> true)),
       ).one[BSONDocument] map { docOpt =>
         {
           for {

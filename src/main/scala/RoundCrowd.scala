@@ -1,16 +1,17 @@
 package lila.ws
 
-import shogi.Color
 import java.util.concurrent.ConcurrentHashMap
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
-import ipc._
+import shogi.Color
+
+import lila.ws.ipc._
 
 final class RoundCrowd(
     lila: Lila,
     json: CrowdJson,
-    groupedWithin: util.GroupedWithin
+    groupedWithin: util.GroupedWithin,
 )(implicit ec: ExecutionContext) {
 
   import RoundCrowd._
@@ -20,7 +21,7 @@ final class RoundCrowd(
   def connect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit =
     publish(
       roomId,
-      rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player))
+      rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player)),
     )
 
   def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = {
@@ -30,7 +31,7 @@ final class RoundCrowd(
         val newRound = round.disconnect(user, player)
         publish(roomId, newRound)
         if (newRound.isEmpty) null else newRound
-      }
+      },
     )
   }
 
@@ -44,7 +45,7 @@ final class RoundCrowd(
             publish(roomId, round)
             if (round.isEmpty) null else round
         }
-      }
+      },
     )
 
   def getUsers(roomId: RoomId): Set[User.ID] =
@@ -82,22 +83,22 @@ object RoundCrowd {
   def outputOf(roomId: RoomId, round: RoundState) =
     Output(
       room = RoomCrowd.outputOf(roomId, round.room),
-      players = round.players
+      players = round.players,
     )
 
   case class RoundState(
       room: RoomCrowd.RoomState = RoomCrowd.RoomState(),
-      players: Color.Map[Int] = Color.Map(0, 0)
+      players: Color.Map[Int] = Color.Map(0, 0),
   ) {
     def connect(user: Option[User], player: Option[Color]) =
       copy(
         room = if (player.isDefined) room else room connect user,
-        players = player.fold(players)(c => players.update(c, _ + 1))
+        players = player.fold(players)(c => players.update(c, _ + 1)),
       )
     def disconnect(user: Option[User], player: Option[Color]) =
       copy(
         room = if (player.isDefined) room else room disconnect user,
-        players = player.fold(players)(c => players.update(c, nb => Math.max(0, nb - 1)))
+        players = player.fold(players)(c => players.update(c, nb => Math.max(0, nb - 1))),
       )
     def botOnline(color: Color, online: Boolean): Option[RoundState] = Some {
       if (online) connect(None, Some(color))

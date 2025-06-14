@@ -1,9 +1,12 @@
 package lila.ws
 package ipc
 
-import shogi.format.usi.Usi
-import shogi.{ Centis, Color, LagMetrics }
 import play.api.libs.json._
+
+import shogi.Centis
+import shogi.Color
+import shogi.LagMetrics
+import shogi.format.usi.Usi
 
 sealed trait LilaIn {
   def write: String
@@ -19,13 +22,12 @@ object LilaIn {
   sealed trait Room      extends LilaIn
   sealed trait Simul     extends Room
   sealed trait Team      extends Room
-  sealed trait Swiss     extends Room
   sealed trait Tour      extends Room
   sealed trait Study     extends Room
   sealed trait Round     extends Room
   sealed trait Challenge extends Room
 
-  sealed trait AnyRoom extends Simul with Team with Swiss with Tour with Study with Round with Challenge
+  sealed trait AnyRoom extends Simul with Team with Tour with Study with Round with Challenge
 
   case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends Site with Lobby {
     def write = s"tell/sri $sri ${optional(userId)} ${Json.stringify(payload)}"
@@ -76,12 +78,17 @@ object LilaIn {
   case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends AnyRoom {
     def write = s"chat/say $roomId $userId $msg"
   }
-  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String, text: String)
-      extends AnyRoom {
+  case class ChatTimeout(
+      roomId: RoomId,
+      userId: User.ID,
+      suspectId: User.ID,
+      reason: String,
+      text: String,
+  ) extends AnyRoom {
     def write = s"chat/timeout $roomId $userId $suspectId $reason $text"
   }
 
-  case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Study with Round {
+  case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Study with Round with Tour {
     import tellSri._
     def write = s"tell/room/sri $roomId $sri ${optional(userId)} ${Json.stringify(payload)}"
   }
@@ -97,7 +104,7 @@ object LilaIn {
       roomId: RoomId,
       name: String,
       present: Set[User.ID],
-      standby: Set[User.ID]
+      standby: Set[User.ID],
   ) extends Tour {
     def write = s"tour/waiting $roomId ${commas(present intersect standby)}"
   }
@@ -106,7 +113,8 @@ object LilaIn {
     def write = s"r/do $fullId ${Json.stringify(payload)}"
   }
 
-  case class RoundMove(fullId: Game.FullId, usi: Usi, blur: Boolean, lag: LagMetrics) extends Round {
+  case class RoundMove(fullId: Game.FullId, usi: Usi, blur: Boolean, lag: LagMetrics)
+      extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
     def write =
       s"r/move $fullId ${usi.usi} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientStepTime)}"
@@ -124,12 +132,13 @@ object LilaIn {
       fullId: Game.FullId,
       ip: IpAddress,
       userId: Option[User.ID],
-      name: String
+      name: String,
   ) extends Round {
     def write = s"r/report $fullId $ip ${optional(userId)} $name"
   }
 
-  case class RoundFlag(gameId: Game.Id, color: Color, playerId: Option[Game.PlayerId]) extends Round {
+  case class RoundFlag(gameId: Game.Id, color: Color, playerId: Option[Game.PlayerId])
+      extends Round {
     def write = s"r/flag $gameId ${writeColor(color)} ${optional(playerId.map(_.value))}"
   }
 
@@ -137,7 +146,8 @@ object LilaIn {
     def write = s"r/bye $fullId"
   }
 
-  case class PlayerChatSay(roomId: RoomId, userIdOrColor: Either[User.ID, Color], msg: String) extends Round {
+  case class PlayerChatSay(roomId: RoomId, userIdOrColor: Either[User.ID, Color], msg: String)
+      extends Round {
     def author = userIdOrColor.fold(identity, writeColor)
     def write  = s"chat/say $roomId $author $msg"
   }

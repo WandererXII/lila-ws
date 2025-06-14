@@ -1,9 +1,10 @@
 package lila.ws
 
+import akka.actor.typed.Behavior
+import akka.actor.typed.PostStop
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ Behavior, PostStop }
 
-import ipc._
+import lila.ws.ipc._
 
 object SiteClientActor {
 

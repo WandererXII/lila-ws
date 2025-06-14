@@ -1,12 +1,18 @@
 package lila.ws
 package ipc
 
-import shogi.format.forsyth.Sfen
-import shogi.format.usi.{ UciToUsi, Usi }
-import shogi.variant.Variant
-import shogi.{ Centis, Color, LagMetrics }
+import scala.util.Success
+import scala.util.Try
+
 import play.api.libs.json._
-import scala.util.{ Success, Try }
+
+import shogi.Centis
+import shogi.Color
+import shogi.LagMetrics
+import shogi.format.forsyth.Sfen
+import shogi.format.usi.UciToUsi
+import shogi.format.usi.Usi
+import shogi.variant.Variant
 
 import lila.ws.util.LilaJsObject.augment
 
@@ -16,6 +22,7 @@ sealed trait ClientOutSite  extends ClientOut
 sealed trait ClientOutLobby extends ClientOut
 sealed trait ClientOutStudy extends ClientOut
 sealed trait ClientOutRound extends ClientOut
+sealed trait ClientOutTour  extends ClientOut
 
 object ClientOut {
 
@@ -35,7 +42,7 @@ object ClientOut {
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId],
-      payload: JsObject
+      payload: JsObject,
   ) extends ClientOutSite
 
   case class MsgType(dest: User.ID) extends ClientOutSite
@@ -61,13 +68,17 @@ object ClientOut {
 
   // round
 
-  case class RoundPlayerForward(payload: JsValue)                                    extends ClientOutRound
-  case class RoundMove(usi: Usi, blur: Boolean, lag: LagMetrics, ackId: Option[Int]) extends ClientOutRound
-  case class RoundHold(mean: Int, sd: Int)                                           extends ClientOutRound
-  case class RoundBerserk(ackId: Option[Int])                                        extends ClientOutRound
-  case class RoundSelfReport(name: String)                                           extends ClientOutRound
-  case class RoundFlag(color: Color)                                                 extends ClientOutRound
-  case object RoundBye                                                               extends ClientOutRound
+  case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
+  case class RoundMove(usi: Usi, blur: Boolean, lag: LagMetrics, ackId: Option[Int])
+      extends ClientOutRound
+  case class RoundHold(mean: Int, sd: Int)    extends ClientOutRound
+  case class RoundBerserk(ackId: Option[Int]) extends ClientOutRound
+  case class RoundSelfReport(name: String)    extends ClientOutRound
+  case class RoundFlag(color: Color)          extends ClientOutRound
+  case object RoundBye                        extends ClientOutRound
+
+  // tour
+  case class TourForward(payload: JsValue) extends ClientOutTour
 
   // chat
 
@@ -120,11 +131,12 @@ object ClientOut {
             case "join" | "cancel" | "joinSeek" | "cancelSeek" | "hookIn" | "hookOut" =>
               Some(LobbyForward(o))
             // study
-            case "like" | "setPath" | "deleteNode" | "promote" | "forceVariation" | "setRole" | "kick" |
-                "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" |
-                "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" | "editStudy" |
-                "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" | "explorerGame" |
-                "requestAnalysis" | "invite" | "setTopics" | "rematch" | "unbindFromGame" =>
+            case "like" | "setPath" | "deleteNode" | "promote" | "forceVariation" | "setRole" |
+                "kick" | "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" |
+                "descStudy" | "descChapter" | "deleteChapter" | "clearAnnotations" |
+                "sortChapters" | "editStudy" | "setTag" | "setComment" | "deleteComment" |
+                "setGamebook" | "toggleGlyph" | "explorerGame" | "requestAnalysis" | "invite" |
+                "setTopics" | "rematch" | "unbindFromGame" =>
               Some(StudyForward(o))
             // round
             case "usi" =>
@@ -145,10 +157,14 @@ object ClientOut {
             case "flag"         => o str "d" flatMap Color.fromName map RoundFlag.apply
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
-            case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
-                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" |
-                "pause-yes" | "pause-no" | "resume-yes" | "resume-no" =>
+            case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" |
+                "draw-yes" | "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" |
+                "abort" | "outoftime" | "pause-yes" | "pause-no" | "resume-yes" | "resume-no" =>
               Some(RoundPlayerForward(o))
+            // tour
+            case "arrangement-match" | "arrangement-time" | "arrangement-organizer" |
+                "process-candidate" | "player-kick" | "close-joining" =>
+              Some(TourForward(o))
             // chat
             case "talk" => o str "d" map { ChatSay.apply }
             case "timeout" =>
@@ -183,6 +199,6 @@ object ClientOut {
       d.int("l") orElse d.int("lag") map Centis.ofMillis,
       d.str("s") flatMap { v =>
         Try(Centis(Integer.parseInt(v, 36))).toOption
-      }
+      },
     )
 }

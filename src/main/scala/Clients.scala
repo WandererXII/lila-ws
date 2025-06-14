@@ -1,7 +1,8 @@
 package lila.ws
 
-import akka.actor.typed.scaladsl.Behaviors
 import scala.concurrent.Promise
+
+import akka.actor.typed.scaladsl.Behaviors
 
 object Clients {
 

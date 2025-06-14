@@ -1,22 +1,25 @@
 package lila.ws
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
-import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
 
-import util.RequestHeader
+import lila.ws.util.RequestHeader
 
 final class Controller(
     config: Config,
     mongo: Mongo,
     auth: Auth,
-    services: Services
+    services: Services,
 )(implicit ec: ExecutionContext) {
 
+  import ClientActor.Deps
+  import ClientActor.Req
   import Controller._
-  import ClientActor.{ Deps, Req }
 
   private val logger = Logger(getClass)
 
@@ -28,7 +31,7 @@ final class Controller(
           Deps(emit, Req(req, sri, user), services)
         },
         credits = 50,
-        interval = 20.seconds
+        interval = 20.seconds,
       )
     }
 
@@ -40,7 +43,7 @@ final class Controller(
           Deps(emit, Req(req, sri, user), services)
         },
         credits = 30,
-        interval = 30.seconds
+        interval = 30.seconds,
       )
     }
 
@@ -50,11 +53,12 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "simul",
-            behavior = SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+            behavior =
+              SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+                Deps(emit, Req(req, sri, user), services)
+              },
             credits = 30,
-            interval = 20.seconds
+            interval = 20.seconds,
           )
         case _ => notFound
       }
@@ -66,11 +70,12 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "tour",
-            behavior = TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+            behavior =
+              TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+                Deps(emit, Req(req, sri, user), services)
+              },
             credits = 30,
-            interval = 20.seconds
+            interval = 20.seconds,
           )
         case _ => notFound
       }
@@ -82,11 +87,12 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "study",
-            behavior = StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+            behavior =
+              StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+                Deps(emit, Req(req, sri, user), services)
+              },
             credits = 60,
-            interval = 15.seconds
+            interval = 15.seconds,
           )
         case _ => notFound
       }
@@ -104,7 +110,7 @@ final class Controller(
                 Deps(emit, Req(req, sri, user), services)
               },
             credits = 50,
-            interval = 20.seconds
+            interval = 20.seconds,
           )
         case _ => notFound
       }
@@ -120,10 +126,10 @@ final class Controller(
               RoomActor.State(RoomId(id.gameId), isTroll),
               Some(player),
               None,
-              fromVersion(req)
+              fromVersion(req),
             ) { Deps(emit, Req(req, sri, user), services) },
             credits = 100,
-            interval = 20.seconds
+            interval = 20.seconds,
           )
         case _ => notFound
       }
@@ -147,7 +153,7 @@ final class Controller(
                 Deps(emit, Req(req, sri, user), services)
               },
             credits = 50,
-            interval = 30.seconds
+            interval = 30.seconds,
           )
       }
     }
@@ -158,27 +164,12 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "team",
-            behavior = TeamClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+            behavior =
+              TeamClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+                Deps(emit, Req(req, sri, user), services)
+              },
             credits = 30,
-            interval = 20.seconds
-          )
-        case _ => notFound
-      }
-    }
-
-  def swiss(id: Swiss.ID, req: RequestHeader, emit: ClientEmit) =
-    WebSocket(req) { sri => user =>
-      mongo.swissExists(id) zip mongo.troll.is(user) map {
-        case (true, isTroll) =>
-          endpoint(
-            name = "swiss",
-            behavior = SwissClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
-            credits = 30,
-            interval = 20.seconds
+            interval = 20.seconds,
           )
         case _ => notFound
       }
@@ -192,7 +183,7 @@ final class Controller(
           Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
         },
         credits = 50,
-        interval = 20.seconds
+        interval = 20.seconds,
       )
     }
 
@@ -227,12 +218,12 @@ final class Controller(
       "https://socket1.lishogi.org",
       "https://lishogi.org",
       "http://l.org", // lila dev
-      "file://"
+      "file://",
     )
 
     def check(req: RequestHeader)(f: => Response): Response = {
       req.origin match {
-        case None => f // for exotic clients and acid ape chess
+        case None                                                       => f
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
         case Some(origin) =>
           logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
@@ -256,7 +247,7 @@ object Controller {
       name: String,
       behavior: ClientBehavior,
       credits: Int,
-      interval: FiniteDuration
+      interval: FiniteDuration,
   ) = {
     Monitor.connection open name
     Right(
@@ -265,9 +256,9 @@ object Controller {
         new RateLimit(
           maxCredits = credits,
           intervalMillis = interval.toMillis.toInt,
-          name = name
-        )
-      )
+          name = name,
+        ),
+      ),
     )
   }
 

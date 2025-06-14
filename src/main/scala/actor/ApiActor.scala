@@ -1,9 +1,11 @@
 package lila.ws
 
-import akka.actor.typed.{ Behavior, PostStop }
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
+import akka.actor.typed.Behavior
+import akka.actor.typed.PostStop
+import akka.actor.typed.scaladsl.ActorContext
+import akka.actor.typed.scaladsl.Behaviors
 
-import ipc._
+import lila.ws.ipc._
 
 object ApiActor {
 

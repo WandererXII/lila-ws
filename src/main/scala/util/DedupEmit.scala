@@ -1,13 +1,14 @@
 package lila.ws
 package util
 
-import akka.actor.typed.Scheduler
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
+
+import akka.actor.typed.Scheduler
 
 final class DedupEmit[A](interval: FiniteDuration)(emit: Emit[A])(implicit
     scheduler: Scheduler,
-    ec: ExecutionContext
+    ec: ExecutionContext,
 ) {
 
   // don't care about race conditions,

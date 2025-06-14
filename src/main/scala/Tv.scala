@@ -1,9 +1,11 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import scala.concurrent.duration._
 
-import ipc._
+import com.github.blemale.scaffeine.Cache
+import com.github.blemale.scaffeine.Scaffeine
+
+import lila.ws.ipc._
 
 object Tv {
 

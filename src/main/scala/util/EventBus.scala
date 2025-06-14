@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 final class EventBus[Event, Channel, Subscriber](
     initialCapacity: Int,
-    publish: (Subscriber, Event) => Unit
+    publish: (Subscriber, Event) => Unit,
 ) {
 
   private val entries = new ConcurrentHashMap[Channel, Set[Subscriber]](initialCapacity)
@@ -14,7 +14,7 @@ final class EventBus[Event, Channel, Subscriber](
       channel,
       (_, subs) => {
         Option(subs).fold(Set(subscriber))(_ + subscriber)
-      }
+      },
     )
 
   def unsubscribe(channel: Channel, subscriber: Subscriber): Unit =
@@ -24,7 +24,7 @@ final class EventBus[Event, Channel, Subscriber](
         val newSubs = subs - subscriber
         if (newSubs.isEmpty) null
         else newSubs
-      }
+      },
     )
 
   def publish(channel: Channel, event: Event): Unit =
