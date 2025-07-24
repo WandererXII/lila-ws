@@ -80,6 +80,10 @@ object Team {
   type ID = String
 }
 
+object Chatroom {
+  val lishogiChatroomId = "lishogi-chatroom"
+}
+
 object Challenge {
   case class Id(value: String) extends AnyVal with StringValue
   sealed trait Challenger

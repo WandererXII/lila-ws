@@ -73,16 +73,18 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       connect[LilaIn.Lobby](chans.lobby) zip
       connect[LilaIn.Simul](chans.simul) zip
       connect[LilaIn.Team](chans.team) zip
+      connect[LilaIn.Chatroom](chans.chatroom) zip
       connect[LilaIn.Study](chans.study) zip
       connect[LilaIn.Round](chans.round) zip
       connect[LilaIn.Challenge](chans.challenge) map {
-        case site ~ tour ~ lobby ~ simul ~ team ~ study ~ round ~ challenge =>
+        case site ~ tour ~ lobby ~ simul ~ team ~ chatroom ~ study ~ round ~ challenge =>
           new Emits(
             site,
             tour,
             lobby,
             simul,
             team,
+            chatroom,
             study,
             round,
             challenge,
@@ -150,6 +152,7 @@ object Lila {
     object lobby     extends Chan("lobby")
     object simul     extends Chan("simul")
     object team      extends Chan("team")
+    object chatroom  extends Chan("chatroom")
     object study     extends Chan("study")
     object round     extends Chan("r")
     object challenge extends Chan("chal")
@@ -161,6 +164,7 @@ object Lila {
       val lobby: Emit[LilaIn.Lobby],
       val simul: Emit[LilaIn.Simul],
       val team: Emit[LilaIn.Team],
+      val chatroom: Emit[LilaIn.Chatroom],
       val study: Emit[LilaIn.Study],
       val round: Emit[LilaIn.Round],
       val challenge: Emit[LilaIn.Challenge],

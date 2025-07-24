@@ -90,6 +90,15 @@ final class LilaHandler(
     case msg      => roomHandler(msg)
   }
 
+  private val chatroomHandler: Emit[LilaOut] = {
+    case LilaBoot => {
+      History.room.version(RoomId(Chatroom.lishogiChatroomId)) map { v =>
+        lila.emit.chatroom(LilaIn.RoomSetVersions(List(v)))
+      }
+    }
+    case msg => roomHandler(msg)
+  }
+
   private val tourHandler: Emit[LilaOut] = {
     case GetWaitingUsers(roomId, name) =>
       mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(
@@ -193,7 +202,7 @@ final class LilaHandler(
     case Lila.chans.simul.out     => simulHandler
     case Lila.chans.study.out     => studyHandler
     case Lila.chans.team.out      => teamHandler
-    case Lila.chans.challenge.out => roomHandler
+    case Lila.chans.chatroom.out  => chatroomHandler
     case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
   })
 }

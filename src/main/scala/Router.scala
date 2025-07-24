@@ -25,6 +25,8 @@ final class Router(controller: Controller) {
       case Array("play", id, _)                 => controller.roundPlay(Game.FullId(id), req, emit)
       case Array("challenge", id, "socket", _)  => controller.challenge(Challenge.Id(id), req, emit)
       case Array("team", id)                    => controller.team(id, req, emit)
+      case Array("chatroom", "socket")          => controller.chatroom(req, emit)
+      case Array("chatroom", "socket", _)       => controller.chatroom(req, emit)
       case _ => Future successful Left(HttpResponseStatus.NOT_FOUND)
     }
   }

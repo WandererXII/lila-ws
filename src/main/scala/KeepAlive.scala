@@ -16,6 +16,7 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
   val simul     = new AliveRooms
   val challenge = new AliveRooms
   val team      = new AliveRooms
+  val chatroom  = new AliveRooms
 
   scheduler.scheduleWithFixedDelay(15.seconds, 15.seconds) { () =>
     lila.emit.study(study.getAndClear)
@@ -23,6 +24,7 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
     lila.emit.simul(simul.getAndClear)
     lila.emit.challenge(challenge.getAndClear)
     lila.emit.team(team.getAndClear)
+    lila.emit.chatroom(chatroom.getAndClear)
   }
 }
 

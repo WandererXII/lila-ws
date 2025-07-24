@@ -35,6 +35,9 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
 
   def size = histories.size
 
+  def version(key: K): Option[(String, SocketVersion)] =
+    Option(histories.get(key.toString)).flatMap(_.headOption.map(e => key.toString -> e.version))
+
   def allVersions: Array[(String, SocketVersion)] = {
     val res = scala.collection.mutable.ArrayBuffer.empty[(String, SocketVersion)]
     histories.forEach { (key, events) =>
