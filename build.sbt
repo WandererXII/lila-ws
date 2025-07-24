@@ -27,7 +27,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor-typed"             % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j"                   % akkaVersion,
   "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.5",
-  "joda-time"                   % "joda-time"            % "2.13.0",
+  "joda-time"                   % "joda-time"            % "2.13.1",
   "com.github.blemale"         %% "scaffeine"            % "5.3.0" % "compile",
   "ch.qos.logback"              % "logback-classic"      % "1.5.16",
   "com.typesafe.play"          %% "play-json"            % "2.10.6",

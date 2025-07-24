@@ -162,7 +162,7 @@ object ClientOut {
                 "abort" | "outoftime" | "pause-yes" | "pause-no" | "resume-yes" | "resume-no" =>
               Some(RoundPlayerForward(o))
             // tour
-            case "arrangement-match" | "arrangement-time" | "arrangement-organizer" |
+            case "arrangement-time" | "arrangement-organizer" | "arrangement-delete" |
                 "process-candidate" | "player-kick" | "close-joining" =>
               Some(TourForward(o))
             // chat
