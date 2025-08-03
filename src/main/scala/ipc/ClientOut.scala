@@ -57,6 +57,8 @@ object ClientOut {
 
   case object Ignore extends ClientOutSite
 
+  case object VersionCheck extends ClientOut
+
   // lobby
 
   case class Idle(value: Boolean, payload: JsValue) extends ClientOutLobby
@@ -114,6 +116,7 @@ object ClientOut {
             case "moveLat"           => Some(MoveLat)
             case "notified"          => Some(Notified)
             case "following_onlines" => Some(FollowingOnline)
+            case "version_check"     => Some(VersionCheck)
             case "anaUsi" =>
               for {
                 d    <- o obj "d"

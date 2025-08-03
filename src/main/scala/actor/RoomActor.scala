@@ -49,6 +49,12 @@ object RoomActor {
       deps.clientIn(versionFor(state.isTroll, versioned))
       None -> None
 
+    case ClientOut.VersionCheck =>
+      History.room.version(state.id) map { case (_, ver) =>
+        deps.clientIn(ClientIn.versionCheck(ver))
+      }
+      None -> None
+
     case ClientIn.OnlyFor(endpoint, payload) =>
       if (endpoint == ClientIn.OnlyFor.Room(state.id)) deps.clientIn(payload)
       None -> None

@@ -219,6 +219,9 @@ object ClientIn {
     case class StoppedPlaying(user: User.ID) extends Event("stopped_playing")
   }
 
+  def versionCheck(version: SocketVersion) =
+    payload("versionCheck", JsonString(version.toString))
+
   case class StormKey(signed: String) extends ClientIn {
     def write = cliMsg("sk1", signed)
   }

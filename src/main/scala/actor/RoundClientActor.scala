@@ -135,6 +135,12 @@ object RoundClientActor {
             }
             Behaviors.same
 
+          case ClientOut.VersionCheck =>
+            History.round.version(gameId) map { case (_, ver) =>
+              clientIn(ClientIn.versionCheck(ver))
+            }
+            Behaviors.same
+
           case ClientOut.ChatSay(msg) =>
             state.player match {
               case None =>
