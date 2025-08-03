@@ -177,18 +177,20 @@ final class Controller(
 
   def chatroom(req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      Future successful endpoint(
-        name = "chatroom",
-        behavior = ChatroomClientActor
-          .start(
-            RoomActor.State(RoomId(Chatroom.lishogiChatroomId), IsTroll(false)),
-            fromVersion(req),
-          ) {
-            Deps(emit, Req(req, sri, user), services)
-          },
-        credits = 30,
-        interval = 20.seconds,
-      )
+      mongo.troll.is(user) map { isTroll =>
+        endpoint(
+          name = "chatroom",
+          behavior = ChatroomClientActor
+            .start(
+              RoomActor.State(RoomId(Chatroom.lishogiChatroomId), isTroll),
+              fromVersion(req),
+            ) {
+              Deps(emit, Req(req, sri, user), services)
+            },
+          credits = 30,
+          interval = 20.seconds,
+        )
+      }
     }
 
   def api(req: RequestHeader, emit: ClientEmit) =
