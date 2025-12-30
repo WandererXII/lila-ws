@@ -193,7 +193,7 @@ object ClientIn {
       def write =
         Json stringify Json.obj(
           "t"       -> "following_onlines",
-          "d"       -> users.map(_.data.titleName),
+          "d"       -> users.map(_.data.name),
           "playing" -> users.collect { case u if u.meta.playing => u.id },
           "patrons" -> users.collect { case u if u.data.patron => u.id },
         )

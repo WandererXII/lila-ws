@@ -112,10 +112,10 @@ object RoundClientActor {
             clientIn(in)
             Behaviors.same
 
-          case ClientOut.RoundMove(usi, blur, lag, ackId) =>
+          case ClientOut.RoundMove(usi, ply, blur, lag, ackId) =>
             fullId foreach { fid =>
               clientIn(ClientIn.Ack(ackId))
-              lilaIn.round(LilaIn.RoundMove(fid, usi, blur, lag))
+              lilaIn.round(LilaIn.RoundMove(fid, usi, ply, blur, lag))
             }
             Behaviors.same
 

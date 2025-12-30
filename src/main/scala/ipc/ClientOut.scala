@@ -71,7 +71,7 @@ object ClientOut {
   // round
 
   case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
-  case class RoundMove(usi: Usi, blur: Boolean, lag: LagMetrics, ackId: Option[Int])
+  case class RoundMove(usi: Usi, ply: Int, blur: Boolean, lag: LagMetrics, ackId: Option[Int])
       extends ClientOutRound
   case class RoundHold(mean: Int, sd: Int)    extends ClientOutRound
   case class RoundBerserk(ackId: Option[Int]) extends ClientOutRound
@@ -146,9 +146,10 @@ object ClientOut {
               for {
                 d   <- o obj "d"
                 usi <- d str "u" flatMap { u => Usi.apply(u).orElse(UciToUsi.apply(u)) }
+                ply <- d int "p"
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(usi, blur, parseLag(d), ackId)
+              } yield RoundMove(usi, ply, blur, parseLag(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
