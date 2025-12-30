@@ -90,7 +90,7 @@ object LilaOut {
   case class GameStart(users: List[User.ID])                           extends RoundOut
   case class GameFinish(users: List[User.ID])                          extends RoundOut
 
-  case class TvSelect(gameId: Game.Id, speed: shogi.Speed, json: JsonString) extends RoundOut
+  case class TvSelect(gameId: Game.Id, json: JsonString) extends RoundOut
 
   case class ApiUserOnline(userId: User.ID, online: Boolean) extends AnyRoomOut
   case object LilaBoot                                       extends AnyRoomOut
@@ -278,10 +278,8 @@ object LilaOut {
       // tv
 
       case "tv/select" => {
-        get(args, 3) { case Array(gameId, speedS, data) =>
-          speedS.toIntOption flatMap shogi.Speed.apply map { speed =>
-            TvSelect(Game.Id(gameId), speed, JsonString(data))
-          }
+        get(args, 2) { case Array(gameId, data) =>
+          Some(TvSelect(Game.Id(gameId), JsonString(data)))
         }
       }
       // misc
