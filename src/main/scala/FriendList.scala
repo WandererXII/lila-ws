@@ -88,9 +88,7 @@ final class FriendList(
 
 object FriendList {
 
-  case class UserData(name: String, title: Option[String], patron: Boolean) {
-    def titleName = title.fold(name)(_ + " " + name)
-  }
+  case class UserData(name: String, patron: Boolean)
 
   case class UserView(id: User.ID, data: UserData, meta: SocialGraph.UserMeta)
 }

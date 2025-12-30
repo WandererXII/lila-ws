@@ -203,7 +203,7 @@ object ClientIn {
       def write =
         Json stringify Json.obj(
           "t" -> "following_enters",
-          "d" -> user.data.titleName,
+          "d" -> user.data.name,
         ) ++ {
           if (user.data.patron) Json.obj("patron" -> true)
           else Json.obj()
