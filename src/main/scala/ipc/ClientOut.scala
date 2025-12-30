@@ -167,7 +167,7 @@ object ClientOut {
               Some(RoundPlayerForward(o))
             // tour
             case "arrangement-time" | "arrangement-organizer" | "arrangement-delete" |
-                "process-candidate" | "player-kick" | "close-joining" =>
+                "arrangement-annul" | "process-candidate" | "player-kick" | "close-joining" =>
               Some(TourForward(o))
             // chat
             case "talk" => o str "d" map { ChatSay.apply }
