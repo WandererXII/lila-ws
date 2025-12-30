@@ -9,34 +9,33 @@ lazy val root = (project in file("."))
 
 val akkaVersion          = "2.6.21"
 val kamonVersion         = "2.7.5"
-val nettyVersion         = "4.1.116.Final"
-val reactivemongoVersion = "1.0.10"
+val nettyVersion         = "4.1.127.Final"
+val reactivemongoVersion = "1.1.0-RC17"
 
-resolvers ++= Resolver.sonatypeOssRepos("snapshots")
-// for com.roundheights hasher
+// for com.roundeights hasher
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
 libraryDependencies ++= Seq(
   "org.reactivemongo" %% "reactivemongo"                % reactivemongoVersion,
   "org.reactivemongo" %% "reactivemongo-bson-api"       % reactivemongoVersion,
-  "org.reactivemongo"  % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-linux-x86-64",
-  "io.lettuce"         % "lettuce-core"                 % "6.5.2.RELEASE",
+  "org.reactivemongo"  % "reactivemongo-shaded-native-linux-x86-64"  % reactivemongoVersion,
+  "io.lettuce"         % "lettuce-core"                 % "6.8.1.RELEASE",
   "io.netty"           % "netty-handler"                % nettyVersion,
   "io.netty"           % "netty-codec-http"             % nettyVersion,
   "io.netty"           % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64",
   "com.typesafe.akka" %% "akka-actor-typed"             % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j"                   % akkaVersion,
   "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.5",
-  "joda-time"                   % "joda-time"            % "2.13.1",
+  "joda-time"                   % "joda-time"            % "2.14.0",
   "com.github.blemale"         %% "scaffeine"            % "5.3.0" % "compile",
-  "ch.qos.logback"              % "logback-classic"      % "1.5.16",
-  "com.typesafe.play"          %% "play-json"            % "2.10.6",
+  "ch.qos.logback"              % "logback-classic"      % "1.5.19",
+  "com.typesafe.play"          %% "play-json"            % "2.10.7",
   "io.kamon"                   %% "kamon-core"           % kamonVersion,
   "io.kamon"                   %% "kamon-influxdb"       % kamonVersion,
   "io.kamon"                   %% "kamon-system-metrics" % kamonVersion,
-  "com.softwaremill.macwire"   %% "macros"               % "2.6.5" % "provided",
+  "com.softwaremill.macwire"   %% "macros"               % "2.6.7" % "provided",
   "com.roundeights"            %% "hasher"               % "1.2.1",
-  "io.github.WandererXII"      %% "scalashogi"           % "12.2.0",
+  "io.github.wandererxii"      %% "scalashogi"           % "12.2.1",
 )
 
 Compile / doc / sources                := Seq.empty
