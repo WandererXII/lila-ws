@@ -9,7 +9,7 @@ lila <-> redis <-> lila-ws <-> websocket <-> client
 Start:
 ```
 sbt
-~reStart
+~run
 ```
 
 Start with custom config file:

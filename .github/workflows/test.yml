@@ -13,4 +13,4 @@ jobs:
           java-version: 17
           cache: sbt
       - uses: sbt/setup-sbt@v1
-      - run: sbt "compile;scalafmtCheck;"
+      - run: sbt "compile;scalafmtCheck;shutdown"

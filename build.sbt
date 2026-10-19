@@ -1,4 +1,4 @@
-name := "lila-ws"
+LocalRootProject / name := "lila-ws"
 
 version := "2.0"
 
@@ -41,7 +41,7 @@ libraryDependencies ++= Seq(
 Compile / doc / sources                := Seq.empty
 Compile / packageDoc / publishArtifact := false
 
-reStart / javaOptions += "-Xmx128m"
+Compile / run / javaOptions += "-Xmx128m"
 
 scalacOptions ++= Seq(
   "-explaintypes",
