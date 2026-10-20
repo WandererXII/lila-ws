@@ -9,7 +9,8 @@ import scala.concurrent.Promise
 import akka.actor.typed.ActorRef
 import io.netty.channel._
 import io.netty.handler.codec.TooLongFrameException
-import io.netty.handler.codec.http._
+import io.netty.handler.codec.http.HttpResponseStatus
+import io.netty.handler.codec.http.HttpVersion
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 import io.netty.handler.codec.http.websocketx._
 import io.netty.util.AttributeKey
@@ -18,7 +19,6 @@ import io.netty.util.concurrent.{ Future => NettyFuture }
 
 final private class ProtocolHandler(
     clients: ActorRef[Clients.Control],
-    router: Router,
 )(implicit ec: ExecutionContext)
     extends WebSocketServerProtocolHandler(
       "/",   // path
@@ -35,19 +35,8 @@ final private class ProtocolHandler(
 
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: java.lang.Object): Unit = {
     evt match {
-      case hs: WebSocketServerProtocolHandler.HandshakeComplete =>
-        // Monitor.count.handshake.inc
-        val promise = Promise[Client]()
-        ctx.channel.attr(key.client).set(promise.future)
-        router(
-          new util.RequestHeader(hs.requestUri, hs.requestHeaders),
-          emitToChannel(ctx.channel),
-        ) foreach {
-          case Left(status) =>
-            terminateConnection(ctx.channel)
-            promise failure new Exception(s"Router refused the connection: $status")
-          case Right(client) => connectActorToChannel(client, ctx.channel, promise)
-        }
+      case _: WebSocketServerProtocolHandler.HandshakeComplete =>
+        connectActorToChannel(ctx.channel.attr(key.endpoint).get, ctx.channel)
       case _ =>
     }
     super.userEventTriggered(ctx, evt)
@@ -56,17 +45,13 @@ final private class ProtocolHandler(
   private def connectActorToChannel(
       endpoint: Endpoint,
       channel: Channel,
-      promise: Promise[Client],
   ): Unit = {
-    channel.attr(key.limit).set(endpoint.rateLimit)
-    clients ! Clients.Start(endpoint.behavior, promise)
+    val promise = Promise[Client]()
+    channel.attr(key.client).set(promise.future)
+    clients ! Clients.Start(endpoint.behavior(emitToChannel(channel)), promise)
     channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
       def operationComplete(f: NettyFuture[Void]): Unit =
-        Option(channel.attr(key.client).get) match {
-          case Some(client) =>
-            client foreach { c => clients ! Clients.Stop(c) }
-          case None => Monitor.websocketError("clientActorMissing")
-        }
+        promise.future foreach { client => clients ! Clients.Stop(client) }
     })
   }
 
@@ -75,19 +60,6 @@ final private class ProtocolHandler(
       if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
       else channel.writeAndFlush(new TextWebSocketFrame(in.write))
     }
-
-  // cancel before the handshake was completed
-  private def sendSimpleErrorResponse(
-      channel: Channel,
-      status: HttpResponseStatus,
-  ): ChannelFuture = {
-    val response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status)
-    response.headers.set(HttpHeaderNames.CONNECTION, "close")
-    response.headers.set(HttpHeaderNames.CONTENT_LENGTH, "0")
-    val f = channel.write(response)
-    f.addListener(ChannelFutureListener.CLOSE)
-    f
-  }
 
   // nicely terminate an ongoing connection
   private def terminateConnection(channel: Channel): ChannelFuture =
@@ -99,24 +71,26 @@ final private class ProtocolHandler(
       // sending/receiving the response.
       case _: IOException =>
         Monitor.websocketError("io")
-        ctx.channel.close()
+        ctx.close()
       case _: WebSocketHandshakeException =>
         Monitor.websocketError("handshake")
-        ctx.channel.close()
+        RequestHandler.sendErrorResponse(ctx, HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST)
       case e: CorruptedWebSocketFrameException
           if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
         Monitor.websocketError("frameLength")
+        ctx.close()
       case _: CorruptedWebSocketFrameException =>
         Monitor.websocketError("corrupted")
+        ctx.close()
       case _: TooLongFrameException =>
         Monitor.websocketError("uriTooLong")
-        sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
+        ctx.close()
       case e: IllegalArgumentException
           if Option(e.getMessage).exists(
             _ contains "Header value contains a prohibited character",
           ) =>
         Monitor.websocketError("headerIllegalChar")
-        sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
+        ctx.close()
       case _ =>
         Monitor.websocketError("other")
         super.exceptionCaught(ctx, cause)
@@ -126,7 +100,7 @@ final private class ProtocolHandler(
 private object ProtocolHandler {
 
   object key {
-    val client = AttributeKey.valueOf[Future[Client]]("client")
-    val limit  = AttributeKey.valueOf[RateLimit]("limit")
+    val client   = AttributeKey.valueOf[Future[Client]]("client")
+    val endpoint = AttributeKey.valueOf[Controller.Endpoint]("endpoint")
   }
 }
