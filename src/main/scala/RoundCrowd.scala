@@ -40,7 +40,7 @@ final class RoundCrowd(
       roomId,
       (_, cur) => {
         Option(cur).getOrElse(RoundState()).botOnline(color, online) match {
-          case None => cur
+          case None        => cur
           case Some(round) =>
             publish(roomId, round)
             if (round.isEmpty) null else round

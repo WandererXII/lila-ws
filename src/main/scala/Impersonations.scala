@@ -9,7 +9,7 @@ object Impersonations {
   def apply(user: User.ID, by: Option[User.ID]): Unit =
     by match {
       case Some(modId) => all = all + (modId -> user)
-      case None =>
+      case None        =>
         all collectFirst {
           case (m, u) if u == user => m
         } foreach { modId => all = all - modId }

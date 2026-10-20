@@ -31,8 +31,8 @@ final class LilaHandler(
     case TellSri(sri, payload)   => publish(_ sri sri, ClientIn.Payload(payload))
     case TellAll(payload)        => publish(_.all, ClientIn.Payload(payload))
 
-    case TellUsers(us, json)  => users.tellMany(us, ClientIn.Payload(json))
-    case DisconnectUser(user) => users.kick(user)
+    case TellUsers(us, json)              => users.tellMany(us, ClientIn.Payload(json))
+    case DisconnectUser(user)             => users.kick(user)
     case TellRoomUser(roomId, user, json) =>
       users.tellOne(user, ClientIn.onlyFor(_ Room roomId, ClientIn.Payload(json)))
     case TellRoomUsers(roomId, us, json) =>
@@ -66,7 +66,7 @@ final class LilaHandler(
     case TellLobbyUsers(us, json) =>
       users.tellMany(us, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
 
-    case TellLobby(payload) => publish(_.lobby, ClientIn.Payload(payload))
+    case TellLobby(payload)       => publish(_.lobby, ClientIn.Payload(payload))
     case TellLobbyActive(payload) =>
       publish(_.lobby, ClientIn.LobbyNonIdle(ClientIn.Payload(payload)))
     case TellSris(sris, payload) =>
@@ -148,18 +148,18 @@ final class LilaHandler(
         publish(_ room RoomId(fullId.gameId), ClientIn.RoundGoneIn(fullId.playerId, seconds))
       case RoundTourStanding(tourId, data) =>
         publish(_ tourStanding tourId, ClientIn.roundTourStanding(data))
-      case o: TvSelect => Tv select o
+      case o: TvSelect      => Tv select o
       case RoomStop(roomId) =>
         History.round.stop(roomId)
         publish(_ room roomId, ClientCtrl.Disconnect)
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
-      case GameStart(users) =>
+      case GameStart(users)                 =>
         users.foreach { u =>
           friendList.startPlaying(u)
           publish(_ userTv u, ClientIn.Resync)
         }
       case GameFinish(users) => users foreach friendList.stopPlaying
-      case LilaBoot =>
+      case LilaBoot          =>
         logger.info("#################### LILA BOOT ####################")
         lila.status.setOnline { () =>
           lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))

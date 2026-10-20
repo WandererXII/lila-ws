@@ -107,7 +107,7 @@ object ClientOut {
       Try(Json parse str) map {
         case o: JsObject =>
           o str "t" flatMap {
-            case "p" => Some(Ping(o int "l"))
+            case "p"             => Some(Ping(o int "l"))
             case "startWatching" => {
               o str "d" map { d =>
                 Watch(d.split(" ").take(16).map(Game.Id.apply).toSet)
@@ -117,7 +117,7 @@ object ClientOut {
             case "notified"          => Some(Notified)
             case "following_onlines" => Some(FollowingOnline)
             case "version_check"     => Some(VersionCheck)
-            case "anaUsi" =>
+            case "anaUsi"            =>
               for {
                 d    <- o obj "d"
                 usi  <- d str "usi" flatMap { u => Usi.apply(u).orElse(UciToUsi.apply(u)) }
@@ -170,7 +170,7 @@ object ClientOut {
                 "arrangement-annul" | "process-candidate" | "player-kick" | "close-joining" =>
               Some(TourForward(o))
             // chat
-            case "talk" => o str "d" map { ChatSay.apply }
+            case "talk"    => o str "d" map { ChatSay.apply }
             case "timeout" =>
               for {
                 data   <- o obj "d"

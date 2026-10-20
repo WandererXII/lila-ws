@@ -48,7 +48,7 @@ object Game {
   }
 
   sealed abstract trait RoundExt { val id: String }
-  object RoundExt {
+  object RoundExt                {
     case class Tour(id: String)  extends RoundExt
     case class Simul(id: String) extends RoundExt
   }
@@ -98,7 +98,7 @@ case class Sri(value: String) extends AnyVal with StringValue
 
 object Sri {
   type Str = String
-  def random = Sri(util.Util.random string 12)
+  def random                         = Sri(util.Util.random string 12)
   def from(str: String): Option[Sri] =
     if (str contains ' ') None
     else Some(Sri(str))

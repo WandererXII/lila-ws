@@ -51,7 +51,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   // particular slot from the graph, as if they were offline). So instead of
   // using a cryptographically secure and randomized hash, just make it
   // slightly more inconvenient to exploit than String.hashCode().
-  private val seed = Random.nextInt()
+  private val seed                       = Random.nextInt()
   private def fxhash32(id: User.ID): Int = {
     id.foldLeft(seed) { case (state, ch) =>
       (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
@@ -65,7 +65,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
       read(slot) match {
-        case None => return NewSlot(slot)
+        case None                                => return NewSlot(slot)
         case Some(existing) if existing.id == id =>
           return ExistingSlot(slot, existing)
         case _ =>
@@ -81,7 +81,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
       read(slot) match {
-        case None => return NewSlot(slot)
+        case None                                => return NewSlot(slot)
         case Some(existing) if existing.id == id =>
           return ExistingSlot(slot, existing)
         case Some(existing) if !existing.meta.online && slot != exceptSlot =>

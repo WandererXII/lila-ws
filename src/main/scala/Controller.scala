@@ -144,7 +144,7 @@ final class Controller(
           case Challenge.Open         => false
         }
       } map {
-        case None => notFound
+        case None        => notFound
         case Some(owner) =>
           endpoint(
             name = "challenge",
@@ -243,7 +243,7 @@ final class Controller(
       req.origin match {
         case None                                                       => f
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
-        case Some(origin) =>
+        case Some(origin)                                               =>
           logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
           Future successful Left(HttpResponseStatus.FORBIDDEN)
       }
