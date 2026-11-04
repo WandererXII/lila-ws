@@ -71,6 +71,8 @@ object ClientIn {
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
   }
 
+  case class ExternalChat(json: JsonString, troll: IsTroll) extends ClientMsg
+
   case class Payload(json: JsonString) extends ClientIn {
     def write = json.value
   }

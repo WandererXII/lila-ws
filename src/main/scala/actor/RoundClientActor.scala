@@ -82,6 +82,10 @@ object RoundClientActor {
             clientIn(versionFor(state, versioned))
             Behaviors.same
 
+          case ClientIn.ExternalChat(json, troll) =>
+            if (!troll.value || state.room.isTroll.value) clientIn(ClientIn.Payload(json))
+            Behaviors.same
+
           case ClientIn.OnlyFor(endpoint, payload) =>
             if (endpoint == ClientIn.OnlyFor.Room(state.room.id)) clientIn(payload)
             Behaviors.same

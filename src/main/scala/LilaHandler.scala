@@ -180,7 +180,7 @@ final class LilaHandler(
         tellVersion(roomId, version, troll, payload)
       case TellRoomChat(roomId, version, troll, payload) =>
         tellVersion(roomId, version, troll, payload)
-        publish(_ externalChat roomId, ClientIn.Payload(payload))
+        publish(_ externalChat roomId, ClientIn.ExternalChat(payload, troll))
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
       case RoomStop(roomId)          => History.room.stop(roomId)
 
