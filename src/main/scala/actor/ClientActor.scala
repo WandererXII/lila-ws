@@ -23,6 +23,7 @@ object ClientActor {
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
+    clientIn(ClientIn.Disconnect)
     LilaWsServer.connections.decrementAndGet
     if (state.watchedGames.nonEmpty) Sfens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
@@ -40,7 +41,6 @@ object ClientActor {
         else Behaviors.same
 
       case ClientCtrl.Disconnect =>
-        deps.clientIn(ClientIn.Disconnect)
         Behaviors.stopped
 
       case ClientCtrl.ApiDisconnect =>
