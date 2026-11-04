@@ -19,9 +19,13 @@ final class RoundCrowd(
   private val rounds = new ConcurrentHashMap[RoomId, RoundState](32768)
 
   def connect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit =
-    publish(
+    rounds.compute(
       roomId,
-      rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player)),
+      (_, cur) => {
+        val round = Option(cur).getOrElse(RoundState()).connect(user, player)
+        publish(roomId, round)
+        round
+      },
     )
 
   def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = {
