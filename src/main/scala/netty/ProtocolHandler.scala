@@ -33,6 +33,11 @@ final private class ProtocolHandler(
   import Controller.Endpoint
   import ProtocolHandler._
 
+  override def channelWritabilityChanged(ctx: ChannelHandlerContext): Unit = {
+    if (!ctx.channel.isWritable) ctx.close()
+    super.channelWritabilityChanged(ctx)
+  }
+
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: java.lang.Object): Unit = {
     evt match {
       case _: WebSocketServerProtocolHandler.HandshakeComplete =>
@@ -98,6 +103,8 @@ final private class ProtocolHandler(
 }
 
 private object ProtocolHandler {
+
+  val writeBufferWaterMark = new WriteBufferWaterMark(32 * 1024, 64 * 1024)
 
   object key {
     val client   = AttributeKey.valueOf[Future[Client]]("client")

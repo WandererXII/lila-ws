@@ -8,6 +8,7 @@ import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.Channel
 import io.netty.channel.ChannelInitializer
+import io.netty.channel.ChannelOption
 import io.netty.channel.MultiThreadIoEventLoopGroup
 import io.netty.channel.epoll.EpollIoHandler
 import io.netty.channel.epoll.EpollServerSocketChannel
@@ -45,6 +46,7 @@ final class NettyServer(
       boot
         .group(bossGroup, workerGroup)
         .channel(channelClz)
+        .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, ProtocolHandler.writeBufferWaterMark)
         .childHandler(new ChannelInitializer[Channel] {
           override def initChannel(ch: Channel): Unit = {
             val pipeline = ch.pipeline()
