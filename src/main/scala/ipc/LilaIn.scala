@@ -106,6 +106,7 @@ object LilaIn {
       s"room/versions ${commas(versions.map { case (r, v) =>
           s"$r:$v"
         })}"
+    override def critical = true
   }
 
   case class WaitingUsers(
