@@ -45,6 +45,7 @@ final class Monitor(
     crowdRoomSize.update(services.roomCrowd.size.toDouble)
     crowdRoundSize.update(rounds.toDouble)
     usersSize.update(services.users.size.toDouble)
+    friendsSubscribedClients.update(services.friends.subscribedClients.toDouble)
     watchSize.update(Sfens.size.toDouble)
     busSize.update(Bus.size.toDouble)
     busAllSize.update(Bus.sizeOf(_.all).toDouble)
@@ -75,7 +76,8 @@ object Monitor {
   val crowdRoomSize  = Kamon.gauge("crowd.room.size").withoutTags()
   val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags()
   val usersSize      = Kamon.gauge("users.size").withoutTags()
-  val watchSize      = Kamon.gauge("watch.size").withoutTags()
+  val friendsSubscribedClients = Kamon.gauge("friends.subscribed.clients").withoutTags()
+  val watchSize                = Kamon.gauge("watch.size").withoutTags()
 
   val palantirChannels = Kamon.gauge("palantir.channels.size").withoutTags()
 

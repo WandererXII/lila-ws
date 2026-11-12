@@ -20,7 +20,6 @@ object ApiActor {
     import deps._
     LilaWsServer.connections.decrementAndGet
     services.users.disconnect(user, ctx.self)
-    services.friends.onClientStop(user.id)
   }
 
   private def apply(deps: Deps): Behavior[ClientMsg] =

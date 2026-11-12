@@ -11,7 +11,6 @@ import lila.ws.SocialGraph.UserMeta
 import lila.ws.ipc.ClientIn.following._
 
 final class FriendList(
-    users: Users,
     graph: SocialGraph,
     mongo: Mongo,
 )(implicit ec: ExecutionContext) {
@@ -22,7 +21,8 @@ final class FriendList(
     .expireAfterAccess(20.minutes)
     .buildAsyncFuture(mongo.userData)
 
-  def start(userId: User.ID, emit: Emit[ipc.ClientIn]): Future[Unit] =
+  def start(userId: User.ID, client: Client, emit: Emit[ipc.ClientIn]): Future[Unit] = {
+    graph.subscribe(userId, client)
     graph.followed(userId) flatMap { entries =>
       Future.sequence {
         entries.collect {
@@ -37,6 +37,7 @@ final class FriendList(
         emit(Onlines(views.flatten))
       }
     }
+  }
 
   def follow(left: User.ID, right: User.ID): Unit =
     graph.follow(left, right)
@@ -49,9 +50,10 @@ final class FriendList(
   def stopPlaying(userId: User.ID) =
     update(userId, StoppedPlaying.apply)(_.withPlaying(false))
 
-  // a user WS closes
-  def onClientStop(userId: User.ID) =
-    graph.unsubscribe(userId)
+  def onClientStop(userId: User.ID, client: Client): Unit =
+    graph.unsubscribe(userId, client)
+
+  def subscribedClients: Int = graph.subscribedClients
 
   // user logs in
   private def onConnect(userId: User.ID): Unit =
@@ -63,7 +65,10 @@ final class FriendList(
 
   private def update(userId: User.ID, msg: User.ID => ipc.ClientIn)(update: UserMeta => UserMeta) =
     graph.tell(userId, update) foreach { case (subject, subs) =>
-      if (subs.nonEmpty) users.tellMany(subs, msg(subject.id))
+      if (subs.nonEmpty) {
+        val event = msg(subject.id)
+        subs foreach { _ ! event }
+      }
     }
 
   private def updateView(userId: User.ID, msg: UserView => ipc.ClientIn)(
@@ -72,7 +77,8 @@ final class FriendList(
     graph.tell(userId, update) foreach { case (subject, subs) =>
       if (subs.nonEmpty) userDatas.get(subject.id) foreach {
         _ foreach { data =>
-          users.tellMany(subs, msg(UserView(subject.id, data, subject.meta)))
+          val event = msg(UserView(subject.id, data, subject.meta))
+          subs foreach { _ ! event }
         }
       }
     }

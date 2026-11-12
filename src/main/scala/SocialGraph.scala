@@ -1,6 +1,7 @@
 package lila.ws
 
 import java.util.TreeSet
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -29,6 +30,8 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   private val logCapacity = config.getInt("socialGraph.logCapacity")
 
   private val graph = new Graph()
+
+  private val subscribers = new ConcurrentHashMap[User.ID, Set[Client]]
 
   // A linear probing, open addressing hash table. A custom implementation is
   // used, so that we know the index of an entry in the hash table is stable
@@ -119,11 +122,14 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     }
   }
 
-  private def readOnlineFollowing(leftSlot: Int): List[User.ID] = {
+  private def readSubscribers(leftSlot: Int): List[Client] = {
     graph.readIncoming(leftSlot) flatMap { rightSlot =>
-      read(rightSlot) collect {
-        case entry if entry.meta.online && entry.meta.subscribed => entry.id
-      }
+      read(rightSlot)
+        .flatMap { entry =>
+          Option(subscribers.get(entry.id))
+        }
+        .iterator
+        .flatten
     }
   }
 
@@ -152,10 +158,10 @@ final class SocialGraph(mongo: Mongo, config: Config) {
       try {
         val leftSlot = findSlot(id, -1) match {
           case NewSlot(leftSlot) =>
-            write(leftSlot, UserEntry(id, UserMeta.freshSubscribed))
+            write(leftSlot, UserEntry(id, UserMeta.fresh))
             leftSlot
           case ExistingSlot(leftSlot, entry) =>
-            write(leftSlot, entry.update(_.withFresh(true).withSubscribed(true)))
+            write(leftSlot, entry.update(_.withFresh(true)))
             leftSlot
         }
         updateFollowed(leftSlot, followed)
@@ -165,8 +171,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     }
   }
 
-  // Load users that id follows, either from the cache or from the database,
-  // and subscribes to future updates from tell.
+  // Load users that id follows, either from the cache or from the database.
   def followed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserEntry]] = {
     lock.lock()
     val infos =
@@ -175,10 +180,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
           case NewSlot(_) =>
             None
           case ExistingSlot(slot, entry) =>
-            if (entry.meta.fresh) {
-              write(slot, entry.update(_.withSubscribed(true)))
-              Some(readFollowed(slot))
-            } else None
+            if (entry.meta.fresh) Some(readFollowed(slot)) else None
         }
       } finally {
         lock.unlock()
@@ -186,18 +188,21 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     infos.fold(doLoadFollowed(id))(Future.successful _)
   }
 
-  def unsubscribe(id: User.ID): Unit = {
-    lock.lock()
-    try {
-      findSlot(id, -1) match {
-        case ExistingSlot(slot, entry) =>
-          write(slot, entry.update(_.withSubscribed(false)))
-        case NewSlot(_) =>
-      }
-    } finally {
-      lock.unlock()
-    }
-  }
+  def subscribe(id: User.ID, client: Client): Unit =
+    subscribers.compute(id, (_, clients) => Option(clients).fold(Set(client))(_ + client))
+
+  def unsubscribe(id: User.ID, client: Client): Unit =
+    subscribers.computeIfPresent(
+      id,
+      (_, clients) => {
+        val remaining = clients - client
+        if (remaining.isEmpty) null else remaining
+      },
+    )
+
+  private[ws] def subscribedUsers: Int = subscribers.size
+
+  private[ws] def subscribedClients: Int = subscribers.values.iterator.asScala.map(_.size).sum
 
   // left no longer follows right.
   def unfollow(left: User.ID, right: User.ID): Unit = {
@@ -240,18 +245,18 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   }
 
   // Updates the status of a user. Returns the current user info and a list of
-  // subscribed users that are interested in this update (if any).
+  // subscribed clients that are interested in this update (if any).
   def tell(
       id: User.ID,
       meta: UserMeta => UserMeta,
-  ): Option[(SocialGraph.UserEntry, List[User.ID])] = {
+  ): Option[(SocialGraph.UserEntry, List[Client])] = {
     lock.lock()
     try {
       findSlot(id, -1) match {
         case ExistingSlot(slot, entry) =>
           val newEntry = entry.update(meta)
           write(slot, newEntry)
-          val result = UserEntry(entry.id, newEntry.meta) -> readOnlineFollowing(slot)
+          val result = UserEntry(entry.id, newEntry.meta) -> readSubscribers(slot)
           Some(result)
         case NewSlot(slot) =>
           write(slot, UserEntry(id, meta(UserMeta.stale)))
@@ -273,23 +278,20 @@ object SocialGraph {
     @inline
     private def has(flag: Int): Boolean = (flags & flag) != 0
 
-    def fresh      = has(UserMeta.FRESH)
-    def subscribed = has(UserMeta.SUBSCRIBED)
-    def online     = has(UserMeta.ONLINE)
-    def playing    = has(UserMeta.PLAYING)
+    def fresh   = has(UserMeta.FRESH)
+    def online  = has(UserMeta.ONLINE)
+    def playing = has(UserMeta.PLAYING)
 
-    def withFresh(fresh: Boolean)           = toggle(UserMeta.FRESH, fresh)
-    def withSubscribed(subscribed: Boolean) = toggle(UserMeta.SUBSCRIBED, subscribed)
-    def withOnline(online: Boolean)         = toggle(UserMeta.ONLINE, online)
-    def withPlaying(playing: Boolean)       = toggle(UserMeta.PLAYING, playing)
+    def withFresh(fresh: Boolean)     = toggle(UserMeta.FRESH, fresh)
+    def withOnline(online: Boolean)   = toggle(UserMeta.ONLINE, online)
+    def withPlaying(playing: Boolean) = toggle(UserMeta.PLAYING, playing)
   }
   object UserMeta {
-    private val FRESH      = 1
-    private val SUBSCRIBED = 2
-    private val ONLINE     = 4
-    private val PLAYING    = 8
-    val stale              = UserMeta(0)
-    val freshSubscribed    = UserMeta(FRESH | SUBSCRIBED)
+    private val FRESH   = 1
+    private val ONLINE  = 4
+    private val PLAYING = 8
+    val stale           = UserMeta(0)
+    val fresh           = UserMeta(FRESH)
   }
 
   case class UserEntry(id: User.ID, meta: UserMeta) {

@@ -23,13 +23,16 @@ object ClientActor {
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
-    clientIn(ClientIn.Disconnect)
-    LilaWsServer.connections.decrementAndGet
-    if (state.watchedGames.nonEmpty) Sfens.unwatch(state.watchedGames, ctx.self)
-    (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
-    req.user foreach { user =>
-      users.disconnect(user, ctx.self)
-      deps.services.friends.onClientStop(user.id)
+    try {
+      clientIn(ClientIn.Disconnect)
+      LilaWsServer.connections.decrementAndGet
+      if (state.watchedGames.nonEmpty) Sfens.unwatch(state.watchedGames, ctx.self)
+      (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
+    } finally {
+      req.user foreach { user =>
+        try services.friends.onClientStop(user.id, ctx.self)
+        finally users.disconnect(user, ctx.self)
+      }
     }
   }
 
@@ -85,7 +88,7 @@ object ClientActor {
         state
 
       case ClientOut.FollowingOnline =>
-        req.userId foreach { services.friends.start(_, clientIn) }
+        req.userId foreach { services.friends.start(_, ctx.self, clientIn) }
         state
 
       case anaUsi: ClientOut.AnaUsi =>
