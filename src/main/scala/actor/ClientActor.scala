@@ -9,11 +9,24 @@ import lila.ws.util.Util.nowSeconds
 
 object ClientActor {
 
+  val maxWatchedGames = 256
+
   case class State(
-      watchedGames: Set[Game.Id] = Set.empty,
+      watchedGames: Vector[Game.Id] = Vector.empty, // oldest first
       lastPing: Int = nowSeconds,
       tourReminded: Boolean = false,
   )
+
+  // drops the oldest ones past the limit
+  def addWatchedGames(
+      watched: Vector[Game.Id],
+      gameIds: Set[Game.Id],
+  ): (Vector[Game.Id], Vector[Game.Id]) = {
+    val all = watched.filterNot(gameIds.contains) ++ gameIds
+    all.splitAt(all.size - maxWatchedGames) match {
+      case (evicted, kept) => (kept, evicted)
+    }
+  }
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     LilaWsServer.connections.incrementAndGet
@@ -71,8 +84,10 @@ object ClientActor {
         sitePing(state, deps, msg)
 
       case ClientOut.Watch(gameIds) =>
+        val (watched, evicted) = addWatchedGames(state.watchedGames, gameIds)
+        if (evicted.nonEmpty) Sfens.unwatch(evicted, ctx.self)
         Sfens.watch(gameIds, ctx.self)
-        state.copy(watchedGames = state.watchedGames ++ gameIds)
+        state.copy(watchedGames = watched)
 
       case ClientOut.MoveLat =>
         Bus.subscribe(Bus.channel.mlat, ctx.self)

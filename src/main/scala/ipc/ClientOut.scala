@@ -101,6 +101,8 @@ object ClientOut {
 
   // impl
 
+  private val GameIdRegex = """([a-zA-Z0-9]{8})""".r
+
   def parse(str: String): Try[ClientOut] = {
     if (str == "null" || str == """{"t":"p"}""") emptyPing
     else
@@ -110,7 +112,7 @@ object ClientOut {
             case "p"             => Some(Ping(o int "l"))
             case "startWatching" => {
               o str "d" map { d =>
-                Watch(d.split(" ").take(16).map(Game.Id.apply).toSet)
+                Watch(d.split(" ").take(16).collect { case GameIdRegex(id) => Game.Id(id) }.toSet)
               } orElse Some(Ignore) // old apps send empty watch lists
             }
             case "moveLat"           => Some(MoveLat)
