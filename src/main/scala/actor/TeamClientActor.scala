@@ -43,7 +43,7 @@ object TeamClientActor {
               Behaviors.same
             }
 
-          case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
+          case ctrl: ClientCtrl => socketControl(state.site, ctrl)
 
           // default receive (site)
           case msg: ClientOutSite =>

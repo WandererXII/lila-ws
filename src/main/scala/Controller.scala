@@ -199,19 +199,6 @@ final class Controller(
       }
     }
 
-  def api(req: RequestHeader) =
-    Future successful {
-      endpoint(
-        name = "api",
-        behavior = (emit: ClientEmit) =>
-          SiteClientActor.start {
-            Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
-          },
-        credits = 50,
-        interval = 20.seconds,
-      )
-    }
-
   private def WebSocket(req: RequestHeader)(f: Sri => Option[User] => Response): Response = {
     CSRF.check(req) {
       ValidSri(req) { sri =>

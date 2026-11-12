@@ -109,10 +109,9 @@ case class Flag private (value: String) extends AnyVal with StringValue
 object Flag {
   def make(value: String) =
     value match {
-      case "simul" | "tournament" | "api" => Some(Flag(value))
-      case _                              => None
+      case "simul" | "tournament" => Some(Flag(value))
+      case _                      => None
     }
-  val api = Flag("api")
 }
 
 case class IpAddress(value: String) extends AnyVal with StringValue

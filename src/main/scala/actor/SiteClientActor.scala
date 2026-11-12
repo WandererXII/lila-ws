@@ -23,7 +23,7 @@ object SiteClientActor {
       .receive[ClientMsg] { (ctx, msg) =>
         msg match {
 
-          case ctrl: ClientCtrl => socketControl(state, deps, ctrl)
+          case ctrl: ClientCtrl => socketControl(state, ctrl)
 
           case in: ClientIn =>
             clientInReceive(state, deps, in) match {

@@ -13,7 +13,6 @@ final class Router(controller: Controller) {
       case Array("socket") | Array("socket", _) => controller.site(req)
       case Array("analysis", "socket")          => controller.site(req)
       case Array("analysis", "socket", _)       => controller.site(req)
-      case Array("api", "socket")               => controller.api(req)
       case Array("lobby", "socket")             => controller.lobby(req)
       case Array("lobby", "socket", _)          => controller.lobby(req)
       case Array("simul", id, "socket", _)      => controller.simul(id, req)

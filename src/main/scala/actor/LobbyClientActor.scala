@@ -36,7 +36,7 @@ object LobbyClientActor {
 
         msg match {
 
-          case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
+          case ctrl: ClientCtrl => socketControl(state.site, ctrl)
 
           case ClientIn.LobbyNonIdle(payload) =>
             if (!state.idle) clientIn(payload)

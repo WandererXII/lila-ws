@@ -49,7 +49,7 @@ object StudyClientActor {
               Behaviors.same
             }
 
-          case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
+          case ctrl: ClientCtrl => socketControl(state.site, ctrl)
 
           case ClientOut.StudyForward(payload) =>
             forward(payload)

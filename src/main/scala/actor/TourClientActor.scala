@@ -49,7 +49,7 @@ object TourClientActor {
               Behaviors.same
             }
 
-          case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
+          case ctrl: ClientCtrl => socketControl(state.site, ctrl)
 
           case ClientOut.TourForward(payload) =>
             forward(payload)

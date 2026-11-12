@@ -3,7 +3,6 @@ package lila.ws
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
-import com.typesafe.scalalogging.Logger
 
 import lila.ws.ipc._
 import lila.ws.util.Util.nowSeconds
@@ -36,11 +35,11 @@ object ClientActor {
     }
   }
 
-  def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] =
+  def socketControl(state: State, msg: ClientCtrl): Behavior[ClientMsg] =
     msg match {
 
       case ClientCtrl.Broom(oldSeconds) =>
-        if (state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api)) Behaviors.stopped
+        if (state.lastPing < oldSeconds) Behaviors.stopped
         else Behaviors.same
 
       case ClientCtrl.Disconnect =>
@@ -74,10 +73,6 @@ object ClientActor {
       case ClientOut.Watch(gameIds) =>
         Sfens.watch(gameIds, ctx.self)
         state.copy(watchedGames = state.watchedGames ++ gameIds)
-
-      case msg: ClientOut if deps.req.flag.contains(Flag.api) =>
-        logger.info(s"API socket doesn't support $msg $req")
-        state
 
       case ClientOut.MoveLat =>
         Bus.subscribe(Bus.channel.mlat, ctx.self)
@@ -134,8 +129,6 @@ object ClientActor {
         deps clientIn in
         None
     }
-
-  private val logger = Logger("ClientActor")
 
   private def busChansOf(req: Req) =
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
