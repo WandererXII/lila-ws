@@ -20,15 +20,7 @@ import io.netty.util.concurrent.{ Future => NettyFuture }
 final private class ProtocolHandler(
     clients: ActorRef[Clients.Control],
 )(implicit ec: ExecutionContext)
-    extends WebSocketServerProtocolHandler(
-      "/",   // path
-      null,  // subprotocols (?)
-      false, // allowExtensions (?)
-      8192,  // max frame size - /inbox allows sending 8000 chars
-      false, // allowMaskMismatch (?)
-      true,  // checkStartsWith
-      true,  // dropPongFrames
-    ) {
+    extends WebSocketServerProtocolHandler(ProtocolHandler.protocolConfig) {
 
   import Controller.Endpoint
   import ProtocolHandler._
@@ -105,6 +97,26 @@ final private class ProtocolHandler(
 private object ProtocolHandler {
 
   val writeBufferWaterMark = new WriteBufferWaterMark(32 * 1024, 64 * 1024)
+
+  val forceCloseTimeoutMillis = 10_000L
+
+  val protocolConfig = WebSocketServerProtocolConfig
+    .newBuilder()
+    .websocketPath("/")
+    .subprotocols(null)
+    .checkStartsWith(true)
+    .dropPongFrames(true)
+    .handshakeTimeoutMillis(10_000L)
+    .forceCloseTimeoutMillis(forceCloseTimeoutMillis)
+    .decoderConfig(
+      WebSocketDecoderConfig
+        .newBuilder()
+        .maxFramePayloadLength(8192) // /inbox allows sending 8000 chars
+        .allowMaskMismatch(false)
+        .allowExtensions(false)
+        .build(),
+    )
+    .build()
 
   object key {
     val client   = AttributeKey.valueOf[Future[Client]]("client")
