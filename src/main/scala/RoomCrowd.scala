@@ -16,20 +16,24 @@ final class RoomCrowd(
   private val rooms = new ConcurrentHashMap[RoomId, RoomState](1024)
 
   def connect(roomId: RoomId, user: Option[User]): Unit =
-    publish(
+    rooms.compute(
       roomId,
-      rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()) connect user),
+      (_, cur) => {
+        val room = Option(cur).getOrElse(RoomState()) connect user
+        publish(roomId, room)
+        room
+      },
     )
 
   def disconnect(roomId: RoomId, user: Option[User]): Unit = {
-    val room = rooms.computeIfPresent(
+    rooms.computeIfPresent(
       roomId,
       (_, room) => {
         val newRoom = room disconnect user
+        publish(roomId, newRoom)
         if (newRoom.isEmpty) null else newRoom
       },
     )
-    if (room != null) publish(roomId, room)
   }
 
   def getUsers(roomId: RoomId): Set[User.ID] =
