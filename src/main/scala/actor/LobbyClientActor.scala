@@ -21,8 +21,8 @@ object LobbyClientActor {
       import deps._
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self, silently = true) }
-      services.lobby.connect(req.sri -> req.user.map(_.id))
       Bus.subscribe(Bus.channel.lobby, ctx.self)
+      services.lobby.connect(req.sri, req.user.map(_.id))
       apply(State(), deps)
     }
 
@@ -77,9 +77,10 @@ object LobbyClientActor {
 
       }
       .receiveSignal { case (ctx, PostStop) =>
-        onStop(state.site, deps, ctx)
-        Bus.unsubscribe(Bus.channel.lobby, ctx.self)
-        deps.services.lobby.disconnect(deps.req.sri)
+        try {
+          onStop(state.site, deps, ctx)
+          Bus.unsubscribe(Bus.channel.lobby, ctx.self)
+        } finally deps.services.lobby.disconnect(deps.req.sri) // a missed decrement pins the SRI forever
         Behaviors.same
       }
 }
