@@ -34,14 +34,19 @@ object KeepAlive {
 
   final class AliveRooms {
 
-    private val rooms = collection.mutable.Set[RoomId]()
+    private val rooms = java.util.concurrent.ConcurrentHashMap.newKeySet[RoomId]()
 
-    def apply(roomId: RoomId) = rooms += roomId
+    def apply(roomId: RoomId): Unit = rooms.add(roomId)
 
+    // ids are either included in this batch or kept for the next one
     def getAndClear: LilaIn.KeepAlives = {
-      val ret = LilaIn.KeepAlives(rooms.toSet)
-      rooms.clear()
-      ret
+      val drained = Set.newBuilder[RoomId]
+      val it      = rooms.iterator()
+      while (it.hasNext) {
+        drained += it.next()
+        it.remove()
+      }
+      LilaIn.KeepAlives(drained.result())
     }
   }
 }
