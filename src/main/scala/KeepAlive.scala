@@ -20,12 +20,12 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
 
   util.SafeSchedule.withFixedDelay(scheduler, "keepAlive", 15.seconds, 15.seconds) {
     // guard each emit so one failure doesn't skip the remaining room types
-    util.SafeSchedule.guard("keepAlive.study")(lila.emit.study(study.getAndClear))
-    util.SafeSchedule.guard("keepAlive.tour")(lila.emit.tour(tour.getAndClear))
-    util.SafeSchedule.guard("keepAlive.simul")(lila.emit.simul(simul.getAndClear))
-    util.SafeSchedule.guard("keepAlive.challenge")(lila.emit.challenge(challenge.getAndClear))
-    util.SafeSchedule.guard("keepAlive.team")(lila.emit.team(team.getAndClear))
-    util.SafeSchedule.guard("keepAlive.chatroom")(lila.emit.chatroom(chatroom.getAndClear))
+    util.SafeSchedule.guard("keepAlive.study")(study.getAndClear foreach lila.emit.study)
+    util.SafeSchedule.guard("keepAlive.tour")(tour.getAndClear foreach lila.emit.tour)
+    util.SafeSchedule.guard("keepAlive.simul")(simul.getAndClear foreach lila.emit.simul)
+    util.SafeSchedule.guard("keepAlive.challenge")(challenge.getAndClear foreach lila.emit.challenge)
+    util.SafeSchedule.guard("keepAlive.team")(team.getAndClear foreach lila.emit.team)
+    util.SafeSchedule.guard("keepAlive.chatroom")(chatroom.getAndClear foreach lila.emit.chatroom)
   }
 }
 
@@ -40,14 +40,16 @@ object KeepAlive {
     def apply(roomId: RoomId): Unit = rooms.add(roomId)
 
     // ids are either included in this batch or kept for the next one
-    def getAndClear: LilaIn.KeepAlives = {
+    // None when there is nothing to send: an empty batch would be written as "-"
+    def getAndClear: Option[LilaIn.KeepAlives] = {
       val drained = Set.newBuilder[RoomId]
       val it      = rooms.iterator()
       while (it.hasNext) {
         drained += it.next()
         it.remove()
       }
-      LilaIn.KeepAlives(drained.result())
+      val ids = drained.result()
+      if (ids.isEmpty) None else Some(LilaIn.KeepAlives(ids))
     }
   }
 }
