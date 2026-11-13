@@ -2,8 +2,10 @@ package lila.ws
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Promise
+import scala.concurrent.duration._
 
 import akka.actor.typed.ActorRef
+import akka.actor.typed.Scheduler
 import com.typesafe.scalalogging.Logger
 
 import lila.ws.ipc._
@@ -17,6 +19,7 @@ final class LilaHandler(
     mongo: Mongo,
     clients: ActorRef[Clients.Control],
     services: Services,
+    scheduler: Scheduler,
 )(implicit ec: ExecutionContext) {
 
   import Bus.publish
@@ -164,6 +167,12 @@ final class LilaHandler(
         lila.status.setOnline { () =>
           lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
         }
+        // lila terminates round actors 1 minute after creating them unless r/ons
+        // reports someone online; resend it before then, once lila has settled
+        scheduler.scheduleOnce(
+          15.seconds,
+          () => util.SafeSchedule.guard("roundCrowd.emitAllOnline")(roundCrowd.emitAllOnline()),
+        )
         Impersonations.reset()
         // in case lila never sent api/online false; it re-sends true as API clients reconnect
         publish(_.api, ClientCtrl.ApiDisconnect)

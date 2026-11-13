@@ -58,6 +58,16 @@ final class RoundCrowd(
   def isPresent(roomId: RoomId, userId: User.ID): Boolean =
     Option(rounds get roomId).exists(_.room.users contains userId)
 
+  def emitAllOnline(): Unit = {
+    val outputs = Vector.newBuilder[Output]
+    rounds.forEach { (roomId, round) =>
+      if (!round.isEmpty) outputs += outputOf(roomId, round)
+    }
+    outputs.result().grouped(emitAllBatchSize) foreach { batch =>
+      lila.emit.round(LilaIn.RoundOnlines(batch))
+    }
+  }
+
   private def publish(roomId: RoomId, round: RoundState): Unit =
     outputBatch(outputOf(roomId, round))
 
@@ -79,6 +89,8 @@ final class RoundCrowd(
 }
 
 object RoundCrowd {
+
+  private val emitAllBatchSize = 1024
 
   case class Output(room: RoomCrowd.Output, players: Color.Map[Int]) {
     def isEmpty = room.members == 0 && players.sente == 0 && players.gote == 0
