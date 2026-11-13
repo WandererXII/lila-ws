@@ -21,7 +21,7 @@ final class RequestHeader(uri: String, req: HttpHeaders) {
     for {
       encoded <- header(HttpHeaderNames.COOKIE)
       cookies = ServerCookieDecoder.LAX decode encoded
-      cookie <- cookies.asScala.find(_.name contains name)
+      cookie <- cookies.asScala.find(_.name == name)
       value  <- Some(cookie.value).filter(_.nonEmpty)
     } yield value
 
