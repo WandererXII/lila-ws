@@ -68,7 +68,6 @@ object Monitor {
     Kamon
       .counter("client.out.unhandled")
       .withTag("name", name)
-      .increment()
 
   val historyRoomSize  = Kamon.gauge("history.room.size").withoutTags()
   val historyRoundSize = Kamon.gauge("history.round.size").withoutTags()
