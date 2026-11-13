@@ -19,6 +19,7 @@ final class FriendList(
 
   private val userDatas: AsyncLoadingCache[User.ID, Option[UserData]] = Scaffeine()
     .expireAfterAccess(20.minutes)
+    .maximumSize(32_768)
     .buildAsyncFuture(mongo.userData)
 
   def start(userId: User.ID, client: Client, emit: Emit[ipc.ClientIn]): Future[Unit] = {

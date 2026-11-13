@@ -47,7 +47,7 @@ object Lobby {
       groupedWithin: util.GroupedWithin,
   ) {
 
-    private val sockets = new ConcurrentHashMap[Sri, Integer](8192)
+    private val sockets = new ConcurrentHashMap[Sri, Integer](2048)
 
     private val logger = Logger(getClass)
 

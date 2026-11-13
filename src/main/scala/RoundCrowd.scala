@@ -16,7 +16,7 @@ final class RoundCrowd(
 
   import RoundCrowd._
 
-  private val rounds = new ConcurrentHashMap[RoomId, RoundState](32768)
+  private val rounds = new ConcurrentHashMap[RoomId, RoundState](4096)
 
   def connect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit =
     rounds.compute(

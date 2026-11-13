@@ -11,6 +11,7 @@ object Palantir {
 
     private val members: Cache[User.ID, Unit] = Scaffeine()
       .expireAfterWrite(7.seconds)
+      .maximumSize(256)
       .build[User.ID, Unit]()
 
     def add(userId: User.ID) = members.put(userId, ())
@@ -20,6 +21,7 @@ object Palantir {
 
   private val channels: Cache[RoomId, Channel] = Scaffeine()
     .expireAfterWrite(1.minute)
+    .maximumSize(1_024)
     .build[RoomId, Channel]()
 
   def respondToPing(roomId: RoomId, user: User): ipc.ClientIn.Palantir = {

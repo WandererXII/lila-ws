@@ -90,7 +90,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true, "iid" -> true)
 
   private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] = Scaffeine()
-    .maximumSize(65536)
+    .maximumSize(16_384)
     .expireAfter[Game.Id, Option[Game.Round]](
       create = (_, round) => if (round.isDefined) 10.minutes else 20.seconds,
       update = (_, round, _) => if (round.isDefined) 10.minutes else 20.seconds,
@@ -228,6 +228,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
     private val cache: AsyncLoadingCache[User.ID, Boolean] = Scaffeine()
       .expireAfterAccess(20.minutes)
+      .maximumSize(32_768)
       .buildAsyncFuture { id =>
         userColl flatMap { exists(_, BSONDocument("_id" -> id, "marks" -> "troll")) }
       }

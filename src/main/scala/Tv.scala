@@ -11,6 +11,7 @@ object Tv {
 
   private val cache: Cache[String, Boolean] = Scaffeine()
     .expireAfterWrite(2.hours)
+    .maximumSize(2_048)
     .build[String, Boolean]()
 
   def select(out: LilaOut.TvSelect): Unit = {

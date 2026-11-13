@@ -9,7 +9,7 @@ object Bus {
   type Chan = String
 
   private val impl = new util.EventBus[ClientMsg, Chan, ActorRef[ClientMsg]](
-    initialCapacity = 65535,
+    initialCapacity = 8192,
     publish = (actor, event) => actor ! event,
   )
 

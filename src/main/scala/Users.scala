@@ -11,8 +11,8 @@ import lila.ws.ipc._
 
 final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
-  private val users       = new ConcurrentHashMap[User.ID, Set[Client]](32768)
-  private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)
+  private val users       = new ConcurrentHashMap[User.ID, Set[Client]](4096)
+  private val disconnects = ConcurrentHashMap.newKeySet[User.ID](512)
 
   private def publish(msg: Any) = Bus.internal.publish("users", msg)
 

@@ -53,6 +53,7 @@ final class CrowdJson(
   private val isStudyCache: AsyncLoadingCache[String, Boolean] =
     Scaffeine()
       .expireAfterWrite(20.minutes)
+      .maximumSize(4_096)
       .buildAsyncFuture(mongo.studyExists)
 
   private def keepOnlyStudyMembers(crowd: RoomCrowd.Output): Future[Iterable[User.ID]] =

@@ -21,6 +21,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
 
   private val done: Cache[User.ID, Boolean] = Scaffeine()
     .expireAfterWrite(10.minutes)
+    .maximumSize(32_768)
     .build[String, Boolean]()
 
   def apply(user: User): Future[Unit] =
