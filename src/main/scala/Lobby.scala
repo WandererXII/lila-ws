@@ -23,7 +23,7 @@ final class Lobby(
 
   object pong {
 
-    private var value = LobbyPong(0, 0)
+    @volatile private var value = LobbyPong(0, 0)
 
     def get = value
 

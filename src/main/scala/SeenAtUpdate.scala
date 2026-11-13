@@ -62,7 +62,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
 
     def contains(user: User) = ids contains user.id
 
-    private var ids = Set.empty[User.ID]
+    @volatile private var ids = Set.empty[User.ID]
 
     private def fetch: Future[Set[User.ID]] =
       mongo.streamer(
