@@ -113,8 +113,10 @@ object RoundClientActor {
             Behaviors.same
 
           case in: ClientIn =>
-            clientIn(in)
-            Behaviors.same
+            clientInReceive(state.site, deps, in) match {
+              case None    => Behaviors.same
+              case Some(s) => apply(state.copy(site = s), deps)
+            }
 
           case ClientOut.RoundMove(usi, ply, blur, lag, ackId) =>
             fullId foreach { fid =>
