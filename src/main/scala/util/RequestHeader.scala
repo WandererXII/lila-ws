@@ -49,3 +49,18 @@ final class RequestHeader(uri: String, req: HttpHeaders) {
 
   def sri = queryParameter("sri") flatMap Sri.from
 }
+
+object RequestHeader {
+
+  // Force decoding up front so that a malformed URI is a client error rather than a server error
+  def decode(uri: String, req: HttpHeaders): Option[RequestHeader] = {
+    val header = new RequestHeader(uri, req)
+    try {
+      header.path
+      header.query.parameters
+      Some(header)
+    } catch {
+      case _: IllegalArgumentException => None
+    }
+  }
+}
