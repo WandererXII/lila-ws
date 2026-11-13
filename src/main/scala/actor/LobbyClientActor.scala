@@ -80,7 +80,8 @@ object LobbyClientActor {
         try {
           onStop(state.site, deps, ctx)
           Bus.unsubscribe(Bus.channel.lobby, ctx.self)
-        } finally deps.services.lobby.disconnect(deps.req.sri) // a missed decrement pins the SRI forever
+        } finally
+          deps.services.lobby.disconnect(deps.req.sri) // a missed decrement pins the SRI forever
         Behaviors.same
       }
 }

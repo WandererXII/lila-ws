@@ -33,7 +33,8 @@ final private class RequestHandler(route: util.RequestHeader => Controller.Respo
       pending = Some(req)
       val response =
         try {
-          (if (req.decoderResult.isSuccess) util.RequestHeader.decode(req.uri, req.headers) else None) match {
+          (if (req.decoderResult.isSuccess) util.RequestHeader.decode(req.uri, req.headers)
+           else None) match {
             case Some(header) => route(header)
             case None         => Future.successful(Left(HttpResponseStatus.BAD_REQUEST))
           }

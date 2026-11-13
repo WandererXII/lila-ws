@@ -30,7 +30,9 @@ final class Monitor(
 
     if (useKamon) kamon.Kamon.init()
 
-    util.SafeSchedule.withFixedDelay(scheduler, "monitor.metrics", 5.seconds, 1949.millis) { periodicMetrics() }
+    util.SafeSchedule.withFixedDelay(scheduler, "monitor.metrics", 5.seconds, 1949.millis) {
+      periodicMetrics()
+    }
   }
 
   private def periodicMetrics() = {
@@ -72,9 +74,9 @@ object Monitor {
   val historyRoomSize  = Kamon.gauge("history.room.size").withoutTags()
   val historyRoundSize = Kamon.gauge("history.round.size").withoutTags()
 
-  val crowdRoomSize  = Kamon.gauge("crowd.room.size").withoutTags()
-  val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags()
-  val usersSize      = Kamon.gauge("users.size").withoutTags()
+  val crowdRoomSize            = Kamon.gauge("crowd.room.size").withoutTags()
+  val crowdRoundSize           = Kamon.gauge("crowd.round.size").withoutTags()
+  val usersSize                = Kamon.gauge("users.size").withoutTags()
   val friendsSubscribedClients = Kamon.gauge("friends.subscribed.clients").withoutTags()
   val watchSize                = Kamon.gauge("watch.size").withoutTags()
 

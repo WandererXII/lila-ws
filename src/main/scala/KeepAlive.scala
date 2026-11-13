@@ -23,7 +23,9 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
     util.SafeSchedule.guard("keepAlive.study")(study.getAndClear foreach lila.emit.study)
     util.SafeSchedule.guard("keepAlive.tour")(tour.getAndClear foreach lila.emit.tour)
     util.SafeSchedule.guard("keepAlive.simul")(simul.getAndClear foreach lila.emit.simul)
-    util.SafeSchedule.guard("keepAlive.challenge")(challenge.getAndClear foreach lila.emit.challenge)
+    util.SafeSchedule.guard("keepAlive.challenge")(
+      challenge.getAndClear foreach lila.emit.challenge,
+    )
     util.SafeSchedule.guard("keepAlive.team")(team.getAndClear foreach lila.emit.team)
     util.SafeSchedule.guard("keepAlive.chatroom")(chatroom.getAndClear foreach lila.emit.chatroom)
   }

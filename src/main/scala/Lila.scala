@@ -21,8 +21,8 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
   object status {
     @volatile private var value: Status = Online
-    def setOffline()                = { value = Offline }
-    def setOnline(init: () => Unit) = {
+    def setOffline()                    = { value = Offline }
+    def setOnline(init: () => Unit)     = {
       value = Online
       init()
       buffer.flush()
@@ -54,7 +54,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   private val handlersPromise                  = Promise[Handlers]()
   private val futureHandlers: Future[Handlers] = handlersPromise.future
   @volatile private var handlers: Handlers = chan => out => futureHandlers foreach { _(chan)(out) }
-  def setHandlers(hs: Handlers)  = {
+  def setHandlers(hs: Handlers)            = {
     handlers = hs
     handlersPromise success hs
   }
