@@ -7,6 +7,7 @@ sealed trait ClientCtrl extends ClientMsg
 
 object ClientCtrl {
   case object Disconnect            extends ClientCtrl
+  case object RoomStop              extends ClientCtrl
   case object ApiDisconnect         extends ClientCtrl
   case class Broom(oldSeconds: Int) extends ClientCtrl
 }

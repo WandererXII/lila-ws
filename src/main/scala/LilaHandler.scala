@@ -151,7 +151,7 @@ final class LilaHandler(
       case o: TvSelect      => Tv select o
       case RoomStop(roomId) =>
         History.round.stop(roomId)
-        publish(_ room roomId, ClientCtrl.Disconnect)
+        publish(_ room roomId, ClientCtrl.RoomStop)
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
       case GameStart(users)                 =>
         users.foreach { u =>

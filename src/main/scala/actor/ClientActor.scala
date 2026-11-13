@@ -55,7 +55,7 @@ object ClientActor {
         if (state.lastPing < oldSeconds) Behaviors.stopped
         else Behaviors.same
 
-      case ClientCtrl.Disconnect =>
+      case ClientCtrl.Disconnect | ClientCtrl.RoomStop =>
         Behaviors.stopped
 
       case ClientCtrl.ApiDisconnect =>
