@@ -90,7 +90,12 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true, "iid" -> true)
 
   private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] = Scaffeine()
-    .expireAfterWrite(10.minutes)
+    .maximumSize(65536)
+    .expireAfter[Game.Id, Option[Game.Round]](
+      create = (_, round) => if (round.isDefined) 10.minutes else 20.seconds,
+      update = (_, round, _) => if (round.isDefined) 10.minutes else 20.seconds,
+      read = (_, _, current) => current,
+    )
     .buildAsyncFuture { id =>
       gameColl flatMap {
         _.find(
