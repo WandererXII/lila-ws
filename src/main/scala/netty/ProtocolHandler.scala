@@ -96,7 +96,7 @@ final private class ProtocolHandler(
 
 private object ProtocolHandler {
 
-  val writeBufferWaterMark = new WriteBufferWaterMark(32 * 1024, 64 * 1024)
+  val writeBufferWaterMark = new WriteBufferWaterMark(512 * 1024, 1024 * 1024)
 
   val forceCloseTimeoutMillis = 10_000L
 
