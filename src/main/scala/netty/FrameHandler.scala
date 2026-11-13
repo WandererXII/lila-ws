@@ -4,8 +4,10 @@ package netty
 import scala.concurrent.ExecutionContext
 
 import com.typesafe.scalalogging.Logger
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
 import io.netty.handler.codec.http.websocketx.WebSocketFrame
 
@@ -26,26 +28,31 @@ final private class FrameHandler(implicit ec: ExecutionContext)
         val txt = frame.text
         if (txt.nonEmpty) {
           val endpoint = ctx.channel.attr(key.endpoint).get
-          if (endpoint == null || endpoint.rateLimit(txt)) ClientOut parse txt foreach {
+          if (endpoint != null && !endpoint.rateLimit(txt)) {
+            ctx.channel
+              .writeAndFlush(new CloseWebSocketFrame(1008, "rate limit exceeded"))
+              .addListener(ChannelFutureListener.CLOSE)
+          } else
+            ClientOut parse txt foreach {
 
-            case ClientOut.Unexpected(msg) =>
-              Monitor.clientOutUnexpected.increment()
-              logger.info(s"Unexpected $msg")
+              case ClientOut.Unexpected(msg) =>
+                Monitor.clientOutUnexpected.increment()
+                logger.info(s"Unexpected $msg")
 
-            case ClientOut.WrongHole =>
-              Monitor.clientOutWrongHole.increment()
+              case ClientOut.WrongHole =>
+                Monitor.clientOutWrongHole.increment()
 
-            case out => {
-              Option(ctx.channel.attr(key.client).get) match {
-                case Some(clientFu) =>
-                  clientFu.value match {
-                    case Some(client) => client foreach (_ ! out)
-                    case None         => clientFu foreach (_ ! out)
-                  }
-                case None => logger.warn(s"No client actor to receive $out")
+              case out => {
+                Option(ctx.channel.attr(key.client).get) match {
+                  case Some(clientFu) =>
+                    clientFu.value match {
+                      case Some(client) => client foreach (_ ! out)
+                      case None         => clientFu foreach (_ ! out)
+                    }
+                  case None => logger.warn(s"No client actor to receive $out")
+                }
               }
             }
-          }
         }
       case frame =>
         logger.info("unsupported frame type: " + frame.getClass().getName())
