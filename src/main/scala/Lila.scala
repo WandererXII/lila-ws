@@ -59,6 +59,17 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
     handlersPromise success hs
   }
 
+  // must be attached before subscribing, or early messages are lost
+  connOut.addListener(new RedisPubSubAdapter[String, String] {
+    override def message(chan: String, msg: String): Unit = {
+      Monitor.redis.out(chan, msg.takeWhile(' '.!=))
+      LilaOut read msg match {
+        case Some(out) => handlers(chan)(out)
+        case None      => logger.warn(s"Can't parse $msg on $chan")
+      }
+    }
+  })
+
   val emit: Emits = Await.result(
     util.Chronometer(connectAll).lap.map { lap =>
       logger.info(s"Redis connection took ${lap.showDuration}")
@@ -116,16 +127,6 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
     promise.future
   }
-
-  connOut.addListener(new RedisPubSubAdapter[String, String] {
-    override def message(chan: String, msg: String): Unit = {
-      Monitor.redis.out(chan, msg.takeWhile(' '.!=))
-      LilaOut read msg match {
-        case Some(out) => handlers(chan)(out)
-        case None      => logger.warn(s"Can't parse $msg on $chan")
-      }
-    }
-  })
 
   def close(): Unit = {
     connIn.close()
