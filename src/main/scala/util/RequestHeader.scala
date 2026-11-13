@@ -37,7 +37,13 @@ final class RequestHeader(uri: String, req: HttpHeaders) {
 
   def flag: Option[Flag] = queryParameter("flag") flatMap Flag.make
 
-  def ip: Option[IpAddress] = header("X-Forwarded-For") map IpAddress
+  // nginx may append the real ip to the X-Forwarded-For header, so we take the last one
+  def ip: Option[IpAddress] =
+    header("X-Forwarded-For")
+      .flatMap(_.split(',').lastOption)
+      .map(_.trim)
+      .filter(ip => ip.nonEmpty && !ip.exists(_.isWhitespace))
+      .map(IpAddress.apply)
 
   def name: String = s"${uri} UA: ${userAgent}"
 

@@ -99,9 +99,10 @@ case class Sri(value: String) extends AnyVal with StringValue
 object Sri {
   type Str = String
   def random                         = Sri(util.Util.random string 12)
+  private val validRegex             = """^[\w-]{1,64}$""".r
   def from(str: String): Option[Sri] =
-    if (str contains ' ') None
-    else Some(Sri(str))
+    if (validRegex.matches(str)) Some(Sri(str))
+    else None
 }
 
 case class Flag private (value: String) extends AnyVal with StringValue
