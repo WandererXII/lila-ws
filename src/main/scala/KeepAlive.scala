@@ -18,13 +18,14 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
   val team      = new AliveRooms
   val chatroom  = new AliveRooms
 
-  scheduler.scheduleWithFixedDelay(15.seconds, 15.seconds) { () =>
-    lila.emit.study(study.getAndClear)
-    lila.emit.tour(tour.getAndClear)
-    lila.emit.simul(simul.getAndClear)
-    lila.emit.challenge(challenge.getAndClear)
-    lila.emit.team(team.getAndClear)
-    lila.emit.chatroom(chatroom.getAndClear)
+  util.SafeSchedule.withFixedDelay(scheduler, "keepAlive", 15.seconds, 15.seconds) {
+    // guard each emit so one failure doesn't skip the remaining room types
+    util.SafeSchedule.guard("keepAlive.study")(lila.emit.study(study.getAndClear))
+    util.SafeSchedule.guard("keepAlive.tour")(lila.emit.tour(tour.getAndClear))
+    util.SafeSchedule.guard("keepAlive.simul")(lila.emit.simul(simul.getAndClear))
+    util.SafeSchedule.guard("keepAlive.challenge")(lila.emit.challenge(challenge.getAndClear))
+    util.SafeSchedule.guard("keepAlive.team")(lila.emit.team(team.getAndClear))
+    util.SafeSchedule.guard("keepAlive.chatroom")(lila.emit.chatroom(chatroom.getAndClear))
   }
 }
 

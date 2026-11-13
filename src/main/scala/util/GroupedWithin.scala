@@ -36,11 +36,10 @@ final class GroupedWithinStage[A](
   private def flush(): Unit = synchronized { unsafeFlush() }
 
   private def unsafeFlush(): Unit = {
-    if (buffer.nonEmpty) {
-      emit(buffer.result())
-      buffer.clear()
-    }
+    val batch = if (buffer.nonEmpty) Some(buffer.result()) else None
+    buffer.clear()
     scheduledFlush.cancel()
     scheduledFlush = scheduler.scheduleOnce(interval, flush _)
+    batch foreach { b => SafeSchedule.guard("groupedWithin.emit")(emit(b)) }
   }
 }

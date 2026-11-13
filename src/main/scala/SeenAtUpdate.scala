@@ -79,7 +79,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
         ),
       )
 
-    scheduler.scheduleWithFixedDelay(30.seconds, 60.seconds) { () =>
+    util.SafeSchedule.withFixedDelay(scheduler, "seenAt.fetch", 30.seconds, 60.seconds) {
       fetch foreach { res =>
         ids = res
       }

@@ -16,7 +16,7 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
   private def publish(msg: Any) = Bus.internal.publish("users", msg)
 
-  scheduler.scheduleWithFixedDelay(7.seconds, 5.seconds) { () =>
+  util.SafeSchedule.withFixedDelay(scheduler, "users.disconnects", 7.seconds, 5.seconds) {
     val pending = disconnects.iterator.asScala.filter(disconnects.remove).toSet
     publish(LilaIn.DisconnectUsers(pending))
   }

@@ -21,5 +21,5 @@ final class DedupEmit[A](interval: FiniteDuration)(emit: Emit[A])(implicit
       emit(a)
     }
 
-  scheduler.scheduleWithFixedDelay(interval, interval) { () => seen = Set.empty }
+  SafeSchedule.withFixedDelay(scheduler, "dedupEmit.reset", interval, interval) { seen = Set.empty }
 }

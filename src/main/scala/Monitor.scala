@@ -30,7 +30,7 @@ final class Monitor(
 
     if (useKamon) kamon.Kamon.init()
 
-    scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics() }
+    util.SafeSchedule.withFixedDelay(scheduler, "monitor.metrics", 5.seconds, 1949.millis) { periodicMetrics() }
   }
 
   private def periodicMetrics() = {
