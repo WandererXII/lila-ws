@@ -12,6 +12,7 @@ object ApiActor {
   def start(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
       deps.services.users.connect(deps.user, ctx.self)
+      Bus.subscribe(Bus.channel.api, ctx.self)
       LilaWsServer.connections.incrementAndGet
       apply(deps)
     }
@@ -19,6 +20,7 @@ object ApiActor {
   def onStop(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     LilaWsServer.connections.decrementAndGet
+    Bus.unsubscribe(Bus.channel.api, ctx.self)
     services.users.disconnect(user, ctx.self)
   }
 

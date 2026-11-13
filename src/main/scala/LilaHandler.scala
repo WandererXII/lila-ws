@@ -165,6 +165,8 @@ final class LilaHandler(
           lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
         }
         Impersonations.reset()
+        // in case lila never sent api/online false; it re-sends true as API clients reconnect
+        publish(_.api, ClientCtrl.ApiDisconnect)
       case msg => roomHandler(msg)
     })
   }
