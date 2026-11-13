@@ -32,7 +32,10 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
         now = DateTime.now
         userDoc <- findAndModify(
           coll = userColl,
-          selector = BSONDocument("_id" -> user.id),
+          selector = BSONDocument(
+            "_id"              -> user.id,
+            "mustConfirmEmail" -> BSONDocument("$exists" -> false),
+          ),
           modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
           fields = BSONDocument("roles" -> true, "_id" -> false),
         )
