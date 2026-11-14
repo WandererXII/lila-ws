@@ -1,6 +1,5 @@
 package lila.ws
 
-import com.typesafe.scalalogging.Logger
 import play.api.libs.json._
 
 import shogi.Pos
@@ -12,24 +11,13 @@ import lila.ws.ipc._
 
 object Shogi {
 
-  private val logger = Logger(getClass)
-
   def apply(req: ClientOut.AnaUsi): ClientIn = {
     Monitor.time(_.shogiMoveTime) {
-      try {
-        shogi
-          .Game(Some(req.sfen), req.variant)(req.usi)
-          .toOption map { game =>
-          {
-
-            makeNode(game, req.usi, req.path, req.chapterId)
-          }
-        } getOrElse ClientIn.StepFailure
-      } catch {
-        case e: java.lang.ArrayIndexOutOfBoundsException =>
-          logger.warn(s"${req.sfen} ${req.variant} ${req.usi}", e)
-          ClientIn.StepFailure
-      }
+      shogi
+        .Game(Some(req.sfen), req.variant)(req.usi)
+        .toOption
+        .map(makeNode(_, req.usi, req.path, req.chapterId))
+        .getOrElse(ClientIn.StepFailure)
     }
   }
 
