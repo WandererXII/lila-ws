@@ -10,3 +10,5 @@ RUNNING_PID
 .bsp
 # for custom plugins or something
 local.sbt
+# for now
+src/test
