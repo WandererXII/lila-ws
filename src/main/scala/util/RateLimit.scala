@@ -9,19 +9,18 @@ final class RateLimit(
 ) {
   import RateLimit._
 
-  private def makeClearAt: Long = nowMillis + intervalMillis
-
   private var credits: Int    = maxCredits
-  private var clearAt: Long   = makeClearAt
+  private var clearAt: Long   = 0L
   private var logged: Boolean = false
 
-  def apply(msg: => String = ""): Boolean =
+  def apply(msg: => String = ""): Boolean = {
+    val now = nowMillis
+    if (clearAt <= now) {
+      credits = maxCredits
+      clearAt = now + intervalMillis
+    }
     if (credits > 0) {
       credits -= 1
-      true
-    } else if (clearAt < nowMillis) {
-      credits = maxCredits
-      clearAt = makeClearAt
       true
     } else {
       if (!logged) {
@@ -31,6 +30,7 @@ final class RateLimit(
       Monitor rateLimit name
       false
     }
+  }
 }
 
 object RateLimit {
