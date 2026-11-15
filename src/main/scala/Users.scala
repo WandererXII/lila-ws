@@ -1,9 +1,9 @@
 package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
 
 import akka.actor.typed.Scheduler
 
@@ -11,14 +11,20 @@ import lila.ws.ipc._
 
 final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
-  private val users       = new ConcurrentHashMap[User.ID, Set[Client]](4096)
-  private val disconnects = ConcurrentHashMap.newKeySet[User.ID](512)
+  private val users = new ConcurrentHashMap[User.ID, Set[Client]](4096)
+
+  private val disconnects = mutable.Set.empty[User.ID]
 
   private def publish(msg: Any) = Bus.internal.publish("users", msg)
 
   util.SafeSchedule.withFixedDelay(scheduler, "users.disconnects", 7.seconds, 5.seconds) {
-    val pending = disconnects.iterator.asScala.filter(disconnects.remove).toSet
-    publish(LilaIn.DisconnectUsers(pending))
+    disconnects.synchronized {
+      if (disconnects.nonEmpty) {
+        val batch = disconnects.toSet
+        disconnects.clear()
+        publish(LilaIn.DisconnectUsers(batch))
+      }
+    }
   }
 
   def connect(user: User, client: Client, silently: Boolean = false): Unit =
@@ -26,7 +32,9 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
       user.id,
       {
         case (_, null) =>
-          if (!disconnects.remove(user.id)) publish(LilaIn.ConnectUser(user, silently))
+          disconnects.synchronized {
+            if (!disconnects.remove(user.id)) publish(LilaIn.ConnectUser(user, silently))
+          }
           Set(client)
         case (_, clients) =>
           clients + client
@@ -39,7 +47,7 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
       (_, clients) => {
         val newClients = clients - client
         if (newClients.isEmpty) {
-          disconnects add user.id
+          disconnects.synchronized { disconnects add user.id }
           null
         } else newClients
       },
