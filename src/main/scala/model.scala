@@ -137,8 +137,6 @@ object RoomId {
 
 case class ReqId(value: Int) extends AnyVal with IntValue
 
-case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])
-
 case class RoundEventFlags(
     watcher: Boolean,
     owner: Boolean,

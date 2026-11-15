@@ -36,6 +36,8 @@ object SiteClientActor {
             if (newState == state) Behaviors.same
             else apply(newState, deps)
 
+          case _: SetTroll => Behaviors.same
+
           case _ =>
             Monitor.clientOutUnhandled("site").increment()
             Behaviors.same

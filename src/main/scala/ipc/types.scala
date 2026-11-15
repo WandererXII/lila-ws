@@ -12,5 +12,4 @@ object ClientCtrl {
   case class Broom(oldSeconds: Int) extends ClientCtrl
 }
 
-object ClientNull               extends ClientMsg
 case class SetTroll(v: IsTroll) extends ClientMsg

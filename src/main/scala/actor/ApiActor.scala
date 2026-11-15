@@ -31,6 +31,8 @@ object ApiActor {
 
           case ClientCtrl.ApiDisconnect => Behaviors.stopped
 
+          case _: SetTroll => Behaviors.same
+
           case _ =>
             Monitor.clientOutUnhandled("api").increment()
             Behaviors.same

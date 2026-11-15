@@ -21,11 +21,4 @@ object Tv {
     }
     cache.put(out.gameId.value, true)
   }
-
-  def get(gameId: Game.Id): Boolean = get(gameId, cache)
-
-  private def get(gameId: Game.Id, in: Cache[String, Boolean]): Boolean =
-    isNotNull(in.underlying.getIfPresent(gameId.value))
-
-  @inline private def isNotNull[A](a: A) = a != null
 }

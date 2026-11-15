@@ -70,6 +70,8 @@ object LobbyClientActor {
             if (siteState == state.site) Behaviors.same
             else apply(state.copy(site = siteState), deps)
 
+          case _: SetTroll => Behaviors.same
+
           case _ =>
             Monitor.clientOutUnhandled("lobby").increment()
             Behaviors.same
